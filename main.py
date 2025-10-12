@@ -2,7 +2,7 @@ import pygames
 pygame.init()
 screen =pygame.display.set_mode((958,554))
 pygame.display.set_caption("SwordDeul")
-#pygame.display.set_icon(pygame.image.load(""))
+pygame.display.set_icon(pygame.image.load("knight.png"))
 background = pygame.image.load("Inmost - metroidvania exploring game in development - Alexey Testov.gif")
 
 #this the main window of the game
