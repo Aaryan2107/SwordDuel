@@ -23,6 +23,7 @@ class Player(pygame.sprite.Sprite):
         self.scale_image(self.Idle_List)
         self.Idle_index = 0
         self.image = self.Idle_List[self.Idle_index]
+        self.rect = self.image.get_rect(midbottom = (120, 800))
 
 
         Run_1 = pygame.image.load('graphic/Player/Run/Run_1.png').convert_alpha()
@@ -60,13 +61,12 @@ class Player(pygame.sprite.Sprite):
         self.attack_index = 0
         self.scale_image(self.attack_list)
         self.images = self.attack_list[self.attack_index]
-        self.rect = self.image.get_rect(midbottom = (120,800))
+     
     def player_input(self):
         key = pygame.key.get_pressed()
         mouse_Button = pygame.mouse.get_pressed()
         if mouse_Button[0]:   
             self.image = self.attack_list[int(self.attack_index)]
-            self.rect = self.image.get_rect(midbottom = (120,800))
         if key[pygame.K_SPACE] and self.rect.bottom >= 800:
             self.gravity = -20
             self.image = self.Jump_List[int(self.Jump_index)]
@@ -75,7 +75,6 @@ class Player(pygame.sprite.Sprite):
             self.rect.x += 10
         else:
             self.image = self.Idle_List[int(self.Idle_index)]
-            self.rect = self.image.get_rect(midbottom = (120,800))
     
     def scale_image(self,list):
         for i in range (len(list)):
@@ -90,36 +89,27 @@ class Player(pygame.sprite.Sprite):
     def apply_gravity(self):
         self.gravity += 1
         self.rect.y += self.gravity
-        if self.rect.bottom >= 800:	self.rect.bottom = 800
-    def is_idle(self):
+        if self.rect.bottom >= 800:	self.rect.bottom = 500
+  
+    def player_animation_state(self):
         keys = pygame.key.get_pressed()
         mouse_Button = pygame.mouse.get_pressed()
         if mouse_Button[0]:
-            return False
-        return True
-    def is_moving(self):
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_w]:
-            return True
-        return False
-    def player_animation_state(self):
-        if self.is_idle():
-            self.Idle_index += 0.1
-            if self.Idle_index >= len(self.Idle_List): self.Idle_index = 0
-            self.image = self.Idle_List[int(self.Idle_index)]
+            self.attack_index += 0.1
+            if self.attack_index >= len(self.attack_list): self.attack_index = 0
+            self.image = self.attack_list[int(self.attack_index)]
         elif pygame.key.get_pressed()[pygame.K_SPACE]:
             self.Jump_index += 0.1
             if self.Jump_index >= len(self.Jump_List): self.Jump_index = 0
             self.image = self.Jump_List[int(self.Jump_index)]
-        elif self.is_moving: 
+        elif pygame.key.get_pressed()[pygame.K_w]: 
             self.Run_index +=0.1
             if self.Run_index >= len(self.Run_List): self.Run_index =0
             self.image = self.Run_List[int(self.Run_index)]
         else:
-            self.attack_index += 0.1
-            if self.attack_index >= len(self.attack_list): self.attack_index = 0
-            self.image = self.attack_list[int(self.attack_index)]
-
+            self.Idle_index += 0.1
+            if self.Idle_index >= len(self.Idle_List): self.Idle_index = 0
+            self.image = self.Idle_List[int(self.Idle_index)]
     def update(self):
         self.player_input()
         self.player_animation_state()
@@ -150,7 +140,7 @@ class Background(pygame.sprite.Sprite):
         
 
 Background_1 = pygame.image.load('graphic/Background/background.png')
-scale_factor = 0.79
+scale_factor = 0.8
 x = int(Background_1.get_width() * scale_factor)
 y = int(Background_1.get_height() * scale_factor)
 Background_1 = pygame.transform.scale(Background_1, (x, y))
