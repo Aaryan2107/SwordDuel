@@ -1,7 +1,7 @@
 import pygame
 from sys import exit
 pygame.init()
-screen = pygame.display.set_mode((1920,1080))
+screen = pygame.display.set_mode((1620,1000))
 clock = pygame.time.Clock()
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -31,22 +31,25 @@ class Player(pygame.sprite.Sprite):
         def player_input(self):
             key = pygame.key.get_pressed()
             if key[pygame.K_SPACE]:   
-                self.image = self.attack_list[self.attack_index]
+                self.image = self.attack_list[int(self.attack_index)]
                 self.rect = self.image.get_rect(midbottom = (80,300))
             else:
-                self.image = self.Idle_List[self.Idle_index]
+                self.image = self.Idle_List[int(self.Idle_index)]
                 self.rect = self.image.get_rect(midbottom = (80,300))
     def player_animation_state(self):
-        if 
+    
         self.attack_index += 0.3
         if self.attack_index > len(self.attack_list): self.attack_index = 0
-        self.image = self.attack_list[self.attack_index]
+        self.image = self.attack_list[int(self.attack_index)]
 
     def update(self):
+        # self.player_input()
+        self.player_animation_state()
        
 
 attack_sprite = pygame.sprite.Group()
 attack_sprite.add(Player())
+
 class Background(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -68,6 +71,8 @@ class Background(pygame.sprite.Sprite):
             Level(level)
         
 
+Background_1 = pygame.image.load('graphic/Background/background.png').convert()
+# bg =pygame.transform.scale(Background_1,screen.get_size())
 
 
 
@@ -78,11 +83,12 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.key == :
-                Player.animate()
+        # if event.type == pygame.MOUSEBUTTONDOWN:
+        #     if event.key == :
+        #         Player.animate()
     attack_sprite.draw(screen)
     attack_sprite.update()
+    screen.blit(Background_1,(0,0))
 
     pygame.display.update()
     clock.tick(60)
