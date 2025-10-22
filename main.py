@@ -34,7 +34,25 @@ class Player(pygame.sprite.Sprite):
         self.attack_index = 0
         self.scale_image(self.attack_list)
         self.image = self.attack_list[self.attack_index]
+
+        # player Slide images
+        self.slide_list = self.images_loader("graphic/Player/Slide/Slide",4)
+        self.scale_image(self.slide_list)
+        self.slide_index = 0    
+        self.image = self.slide_list[self.slide_index]
+
+        # player Crouch images
+        self.crouch_list = self.images_loader("graphic/Player/Crouch/Crouch",3)
+        self.scale_image(self.crouch_list)  
+        self.crouch_index = 0  
+        self.image = self.crouch_list[self.crouch_index]
+
+        # player TurnAround images
+        self.Turn_list = self.images_loader("graphic/Player/TurnAround/TurnAround",3)
+        self.scale_image(self.Turn_list)  
+        self.Turn_index = 0 
      
+    # Load images function : load images from a given path and number of images
     def images_loader(self,path,number):
         images = []
         for i in range(1,number+1):
@@ -48,7 +66,11 @@ class Player(pygame.sprite.Sprite):
             self.gravity = -20
             self.space_pressed = True
         if key[pygame.K_w]:
+            self.rect.x += 5
+        elif key[pygame.K_LSHIFT]:
             self.rect.x += 10
+        elif key[pygame.K_s]:
+            self.rect.x -= 10
     def scale_image(self,list):
         for i in range (len(list)):
             x = int(list[i].get_width() *5)
@@ -78,18 +100,41 @@ class Player(pygame.sprite.Sprite):
             self.Run_index +=0.1
             if self.Run_index >= len(self.Run_List): self.Run_index =0
             self.image = self.Run_List[int(self.Run_index)]
+        elif pygame.key.get_pressed()[pygame.K_LSHIFT]:
+            self.slide_index +=0.2
+            if self.slide_index >= len(self.slide_list): self.slide_index =0
+            self.image = self.slide_list[int(self.slide_index)]
+        elif pygame.key.get_pressed()[pygame.K_c]:
+            self.crouch_index +=0.1
+            if self.crouch_index >= len(self.crouch_list): self.crouch_index =0
+            self.image = self.crouch_list[int(self.crouch_index)]
+        elif pygame.key.get_pressed()[pygame.K_s]:
+            self.Turn_index +=0.1
+            if self.Turn_index >= len(self.Turn_list): self.Turn_index =0
+            self.image = self.Turn_list[int(self.Turn_index)]
         else:
             self.Idle_index += 0.1
             if self.Idle_index >= len(self.Idle_List): self.Idle_index = 0
             self.image = self.Idle_List[int(self.Idle_index)]
+        
     
     def update(self):
         self.player_input()
         self.apply_gravity()
         self.player_animation_state()
-       
-attack_sprite = pygame.sprite.Group()
-attack_sprite.add(Player())
+
+
+      
+class Ememy(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+
+
+    def images_loader(self,path,number):
+        images = []
+        for i in range(1,number+1):
+            img = pygame.image.load(f'{path}_{i}.png').convert_alpha()
+            images.append(img)
 
 class Background(pygame.sprite.Sprite):
     def __init__(self):
@@ -118,16 +163,23 @@ x = int(Background_1.get_width() * scale_factor)
 y = int(Background_1.get_height() * scale_factor)
 Background_1 = pygame.transform.scale(Background_1, (x, y))
 
+
 player = pygame.sprite.GroupSingle()
 player.add(Player())
+Ememy = pygame.sprite.Group()
+Ememy.add(Ememy())
+Game_Active = True
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
-    screen.blit(Background_1,(0,0))    
-    player.draw(screen)
-    player.update()
+    if Game_Active:
+        screen.blit(Background_1,(0,0))    
+        player.draw(screen)
+        player.update()
+        Ememy.draw(screen)
+        Ememy.update()
 
     pygame.display.update()
     clock.tick(60)
