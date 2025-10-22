@@ -7,6 +7,7 @@ screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.NOFRAM
 clock = pygame.time.Clock()
 class Player(pygame.sprite.Sprite):
     def __init__(self):
+        self.space_pressed = False
         super().__init__()
         # Player Idle Position images
         self.Idle_List = []
@@ -49,17 +50,11 @@ class Player(pygame.sprite.Sprite):
     def player_input(self):
         key = pygame.key.get_pressed()
         mouse_Button = pygame.mouse.get_pressed()
-        if mouse_Button[0]:   
-            self.image = self.attack_list[int(self.attack_index)]
-        if key[pygame.K_SPACE] and self.rect.bottom >= 800:
+        if key[pygame.K_SPACE] and self.space_pressed == False:
             self.gravity = -20
-            self.image = self.Jump_List[int(self.Jump_index)]
+            self.space_pressed = True
         if key[pygame.K_w]:
-            self.image = self.Run_List[int(self.Run_index)]
             self.rect.x += 10
-        else:
-            self.image = self.Idle_List[int(self.Idle_index)]
-    
     def scale_image(self,list):
         for i in range (len(list)):
             x = int(list[i].get_width() *5)
@@ -69,7 +64,10 @@ class Player(pygame.sprite.Sprite):
     def apply_gravity(self):
         self.gravity += 1
         self.rect.y += self.gravity
-        if self.rect.bottom >= 800:	self.rect.bottom = 500
+        if self.rect.bottom >= 800:	
+            self.rect.bottom = 800
+            self.gravity = 0         
+            self.space_pressed = False
   
     def player_animation_state(self):
         keys = pygame.key.get_pressed()
@@ -78,7 +76,7 @@ class Player(pygame.sprite.Sprite):
             self.attack_index += 0.2
             if self.attack_index >= len(self.attack_list): self.attack_index = 0
             self.image = self.attack_list[int(self.attack_index)]
-        elif pygame.key.get_pressed()[pygame.K_SPACE]:
+        elif self.rect.bottom < 800:
             self.Jump_index += 0.1
             if self.Jump_index >= len(self.Jump_List): self.Jump_index = 0
             self.image = self.Jump_List[int(self.Jump_index)]
@@ -93,6 +91,7 @@ class Player(pygame.sprite.Sprite):
     
     def update(self):
         self.player_input()
+        self.apply_gravity()
         self.player_animation_state()
        
 attack_sprite = pygame.sprite.Group()
@@ -132,14 +131,9 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
-        # if event.type == pygame.MOUSEBUTTONDOWN:
-        #     if event.key == :
-        #         Player.animate()
-    
     screen.blit(Background_1,(0,0))    
     player.draw(screen)
     player.update()
-
 
     pygame.display.update()
     clock.tick(60)
