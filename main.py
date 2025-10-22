@@ -10,44 +10,37 @@ class Player(pygame.sprite.Sprite):
         self.space_pressed = False
         super().__init__()
         # Player Idle Position images
-        self.Idle_List = []
-        for i in range(1,11):
-            img = pygame.image.load(f'graphic/Player/Idle/_Idle_r{i}.png')
-            self.Idle_List.append(img)
+        self.Idle_List = self.images_loader("graphic/Player/Idle/Idle", 10)
         self.scale_image(self.Idle_List)
         self.Idle_index = 0
-        self.Idle_List = self.load_images("graphic/Player/Idle", 10)
         self.image = self.Idle_List[self.Idle_index]
         self.rect = self.image.get_rect(midbottom = (120, 800))
 
         # Player run position images
-        self.Run_List = []
-        for i in range(1,11):
-            img = pygame.image.load(f'graphic/Player/Run/Run_{i}.png').convert_alpha()
-            self.Run_List.append(img)
+        self.Run_List = self.images_loader("graphic/Player/Run/Run", 10)
         self.scale_image(self.Run_List)
         self.Run_index = 0  
         self.image = self.Run_List[self.Run_index]
 
         # player jump images
-        self.Jump_List = []
-        for i in range(1,4):
-            img = pygame.image.load(f'graphic/Player/Jump/jump_{i}.png').convert_alpha()
-            self.Jump_List.append(img)
+        self.Jump_List = self.images_loader("graphic/Player/Jump/Jump", 3)
         self.scale_image(self.Jump_List)
         self.Jump_index = 0
         self.gravity = 0
         self.image = self.Jump_List[self.Jump_index]
        
         # player Normal attack images
-        self.attack_list = []
-        for i in range(1,5):
-            img = pygame.image.load(f'graphic/Player/Player_Attack_1/n_attack_{i}.png').convert_alpha()
-            self.attack_list.append(img)
+        self.attack_list = self.images_loader("graphic/Player/Player_Attack_1/n_attack", 4)
         self.attack_index = 0
         self.scale_image(self.attack_list)
         self.image = self.attack_list[self.attack_index]
      
+    def images_loader(self,path,number):
+        images = []
+        for i in range(1,number+1):
+            img = pygame.image.load(f'{path}_{i}.png').convert_alpha()
+            images.append(img)
+        return images
     def player_input(self):
         key = pygame.key.get_pressed()
         mouse_Button = pygame.mouse.get_pressed()
