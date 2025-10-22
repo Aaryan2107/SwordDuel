@@ -166,8 +166,8 @@ Background_1 = pygame.transform.scale(Background_1, (x, y))
 
 player = pygame.sprite.GroupSingle()
 player.add(Player())
-Ememy = pygame.sprite.Group()
-Ememy.add(Ememy())
+# Ememy = pygame.sprite.Group()
+# Ememy.add(Ememy())
 Game_Active = True
 while True:
     for event in pygame.event.get():
@@ -178,8 +178,8 @@ while True:
         screen.blit(Background_1,(0,0))    
         player.draw(screen)
         player.update()
-        Ememy.draw(screen)
-        Ememy.update()
+        # Ememy.draw(screen)
+        # Ememy.update()
 
     pygame.display.update()
     clock.tick(60)
