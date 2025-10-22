@@ -9,19 +9,20 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         # Player Idle Position images
-        idle_1 =pygame.image.load('graphic/Player/Idle/_Idle_r1.png')
-        idle_2 =pygame.image.load('graphic/Player/Idle/_Idle_r2.png')
-        idle_3 =pygame.image.load('graphic/Player/Idle/_Idle_r3.png')
-        idle_4 =pygame.image.load('graphic/Player/Idle/_Idle_r4.png')
-        idle_5 =pygame.image.load('graphic/Player/Idle/_Idle_r5.png')
-        idle_6 =pygame.image.load('graphic/Player/Idle/_Idle_r6.png')
-        idle_7 =pygame.image.load('graphic/Player/Idle/_Idle_r7.png')
-        idle_8 =pygame.image.load('graphic/Player/Idle/_Idle_r8.png')
-        idle_9 =pygame.image.load('graphic/Player/Idle/_Idle_r9.png')
-        idle_10 =pygame.image.load('graphic/Player/Idle/_Idle_r10.png')
-        self.Idle_List = [idle_1,idle_2,idle_3,idle_4,idle_5,idle_6,idle_7,idle_8,idle_9,idle_10]
-        self.scale_image(self.Idle_List)
+        # idle_1 =pygame.image.load('graphic/Player/Idle/_Idle_r1.png')
+        # idle_2 =pygame.image.load('graphic/Player/Idle/_Idle_r2.png')
+        # idle_3 =pygame.image.load('graphic/Player/Idle/_Idle_r3.png')
+        # idle_4 =pygame.image.load('graphic/Player/Idle/_Idle_r4.png')
+        # idle_5 =pygame.image.load('graphic/Player/Idle/_Idle_r5.png')
+        # idle_6 =pygame.image.load('graphic/Player/Idle/_Idle_r6.png')
+        # idle_7 =pygame.image.load('graphic/Player/Idle/_Idle_r7.png')
+        # idle_8 =pygame.image.load('graphic/Player/Idle/_Idle_r8.png')
+        # idle_9 =pygame.image.load('graphic/Player/Idle/_Idle_r9.png')
+        # idle_10 =pygame.image.load('graphic/Player/Idle/_Idle_r10.png')
+        # self.Idle_List = [idle_1,idle_2,idle_3,idle_4,idle_5,idle_6,idle_7,idle_8,idle_9,idle_10]
+        # self.scale_image(self.Idle_List)
         self.Idle_index = 0
+        self.Idle_List = self.load_images("graphic/Player/Idle", 10)
         self.image = self.Idle_List[self.Idle_index]
         self.rect = self.image.get_rect(midbottom = (120, 800))
 
@@ -61,6 +62,20 @@ class Player(pygame.sprite.Sprite):
         self.attack_index = 0
         self.scale_image(self.attack_list)
         self.images = self.attack_list[self.attack_index]
+        # call the function here
+        self.Idle_List = self.load_images("graphic/Player/Idle", 10)
+        # self.Run_List = self.load_images("graphic/Player/Run", 10)
+
+    def load_images(self, folder_path, count, scale_factor=5):
+        frames = []
+        for i in range(1, count + 1):
+            img = pygame.image.load(f"{folder_path}/_Idle_r{i}.png").convert_alpha()
+            w, h = img.get_width() * scale_factor, img.get_height() * scale_factor
+            img = pygame.transform.scale(img, (w, h))
+            frames.append(img)
+        return frames
+
+
      
     def player_input(self):
         key = pygame.key.get_pressed()
@@ -110,6 +125,8 @@ class Player(pygame.sprite.Sprite):
             self.Idle_index += 0.1
             if self.Idle_index >= len(self.Idle_List): self.Idle_index = 0
             self.image = self.Idle_List[int(self.Idle_index)]
+    
+
     def update(self):
         self.player_input()
         self.player_animation_state()
