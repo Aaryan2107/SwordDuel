@@ -7,113 +7,77 @@ screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.NOFRAM
 clock = pygame.time.Clock()
 class Player(pygame.sprite.Sprite):
     def __init__(self):
+        self.space_pressed = False
         super().__init__()
         # Player Idle Position images
-        # idle_1 =pygame.image.load('graphic/Player/Idle/_Idle_r1.png')
-        # idle_2 =pygame.image.load('graphic/Player/Idle/_Idle_r2.png')
-        # idle_3 =pygame.image.load('graphic/Player/Idle/_Idle_r3.png')
-        # idle_4 =pygame.image.load('graphic/Player/Idle/_Idle_r4.png')
-        # idle_5 =pygame.image.load('graphic/Player/Idle/_Idle_r5.png')
-        # idle_6 =pygame.image.load('graphic/Player/Idle/_Idle_r6.png')
-        # idle_7 =pygame.image.load('graphic/Player/Idle/_Idle_r7.png')
-        # idle_8 =pygame.image.load('graphic/Player/Idle/_Idle_r8.png')
-        # idle_9 =pygame.image.load('graphic/Player/Idle/_Idle_r9.png')
-        # idle_10 =pygame.image.load('graphic/Player/Idle/_Idle_r10.png')
-        # self.Idle_List = [idle_1,idle_2,idle_3,idle_4,idle_5,idle_6,idle_7,idle_8,idle_9,idle_10]
-        # self.scale_image(self.Idle_List)
+        self.Idle_List = []
+        for i in range(1,11):
+            img = pygame.image.load(f'graphic/Player/Idle/_Idle_r{i}.png')
+            self.Idle_List.append(img)
+        self.scale_image(self.Idle_List)
         self.Idle_index = 0
         self.Idle_List = self.load_images("graphic/Player/Idle", 10)
         self.image = self.Idle_List[self.Idle_index]
         self.rect = self.image.get_rect(midbottom = (120, 800))
 
-
-        Run_1 = pygame.image.load('graphic/Player/Run/Run_1.png').convert_alpha()
-        Run_2 = pygame.image.load('graphic/Player/Run/Run_2.png').convert_alpha()
-        Run_3 = pygame.image.load('graphic/Player/Run/Run_3.png').convert_alpha()
-        Run_4 = pygame.image.load('graphic/Player/Run/Run_4.png').convert_alpha()
-        Run_5 = pygame.image.load('graphic/Player/Run/Run_5.png').convert_alpha()
-        Run_6 = pygame.image.load('graphic/Player/Run/Run_6.png').convert_alpha()
-        Run_7 = pygame.image.load('graphic/Player/Run/Run_7.png').convert_alpha()
-        Run_8 = pygame.image.load('graphic/Player/Run/Run_8.png').convert_alpha()
-        Run_8 = pygame.image.load('graphic/Player/Run/Run_8.png').convert_alpha()
-        Run_9 = pygame.image.load('graphic/Player/Run/Run_9.png').convert_alpha()
-        Run_10 = pygame.image.load('graphic/Player/Run/Run_10.png').convert_alpha()
-        self.Run_List = [Run_1,Run_2,Run_3,Run_4,Run_5,Run_6,Run_7,Run_8]
+        # Player run position images
+        self.Run_List = []
+        for i in range(1,11):
+            img = pygame.image.load(f'graphic/Player/Run/Run_{i}.png').convert_alpha()
+            self.Run_List.append(img)
         self.scale_image(self.Run_List)
         self.Run_index = 0  
         self.image = self.Run_List[self.Run_index]
 
         # player jump images
-        jump_1 = pygame.image.load('graphic/Player/Jump/jump_1.png').convert_alpha()
-        jump_2 = pygame.image.load('graphic/Player/Jump/jump_2.png').convert_alpha()
-        jump_3 = pygame.image.load('graphic/Player/Jump/jump_3.png').convert_alpha()
-        self.Jump_List = [jump_1,jump_2,jump_3]
+        self.Jump_List = []
+        for i in range(1,4):
+            img = pygame.image.load(f'graphic/Player/Jump/jump_{i}.png').convert_alpha()
+            self.Jump_List.append(img)
         self.scale_image(self.Jump_List)
         self.Jump_index = 0
         self.gravity = 0
         self.image = self.Jump_List[self.Jump_index]
        
         # player Normal attack images
-        attack_1 = pygame.image.load('graphic/Player/Player_Attack_1/n_attack_1.png').convert_alpha()
-        attack_2 = pygame.image.load('graphic/Player/Player_Attack_1/n_attack_2.png').convert_alpha()
-        attack_3 = pygame.image.load('graphic/Player/Player_Attack_1/n_attack_3.png').convert_alpha()
-        attack_4 = pygame.image.load('graphic/Player/Player_Attack_1/n_attack_4.png').convert_alpha()
-        self.attack_list = [attack_1,attack_2,attack_3,attack_4]
+        self.attack_list = []
+        for i in range(1,5):
+            img = pygame.image.load(f'graphic/Player/Player_Attack_1/n_attack_{i}.png').convert_alpha()
+            self.attack_list.append(img)
         self.attack_index = 0
         self.scale_image(self.attack_list)
-        self.images = self.attack_list[self.attack_index]
-        # call the function here
-        self.Idle_List = self.load_images("graphic/Player/Idle", 10)
-        # self.Run_List = self.load_images("graphic/Player/Run", 10)
-
-    def load_images(self, folder_path, count, scale_factor=5):
-        frames = []
-        for i in range(1, count + 1):
-            img = pygame.image.load(f"{folder_path}/_Idle_r{i}.png").convert_alpha()
-            w, h = img.get_width() * scale_factor, img.get_height() * scale_factor
-            img = pygame.transform.scale(img, (w, h))
-            frames.append(img)
-        return frames
-
-
+        self.image = self.attack_list[self.attack_index]
      
     def player_input(self):
         key = pygame.key.get_pressed()
         mouse_Button = pygame.mouse.get_pressed()
-        if mouse_Button[0]:   
-            self.image = self.attack_list[int(self.attack_index)]
-        if key[pygame.K_SPACE] and self.rect.bottom >= 800:
+        if key[pygame.K_SPACE] and self.space_pressed == False:
             self.gravity = -20
-            self.image = self.Jump_List[int(self.Jump_index)]
+            self.space_pressed = True
         if key[pygame.K_w]:
-            self.image = self.Run_List[int(self.Run_index)]
             self.rect.x += 10
-        else:
-            self.image = self.Idle_List[int(self.Idle_index)]
-    
     def scale_image(self,list):
         for i in range (len(list)):
             x = int(list[i].get_width() *5)
             y = int(list[i].get_height() *5)
-            list[i] = pygame.transform.scale(list[i], (x, y))
-  
-
-
-
-        
+            list[i] = pygame.transform.scale(list[i], (x, y))    
+    
     def apply_gravity(self):
         self.gravity += 1
         self.rect.y += self.gravity
-        if self.rect.bottom >= 800:	self.rect.bottom = 500
+        if self.rect.bottom >= 800:	
+            self.rect.bottom = 800
+            self.gravity = 0         
+            self.space_pressed = False
   
     def player_animation_state(self):
         keys = pygame.key.get_pressed()
         mouse_Button = pygame.mouse.get_pressed()
         if mouse_Button[0]:
-            self.attack_index += 0.1
+            self.attack_index += 0.2
             if self.attack_index >= len(self.attack_list): self.attack_index = 0
             self.image = self.attack_list[int(self.attack_index)]
-        elif pygame.key.get_pressed()[pygame.K_SPACE]:
+        elif self.rect.bottom < 800:
             self.Jump_index += 0.1
             if self.Jump_index >= len(self.Jump_List): self.Jump_index = 0
             self.image = self.Jump_List[int(self.Jump_index)]
@@ -126,12 +90,11 @@ class Player(pygame.sprite.Sprite):
             if self.Idle_index >= len(self.Idle_List): self.Idle_index = 0
             self.image = self.Idle_List[int(self.Idle_index)]
     
-
     def update(self):
         self.player_input()
+        self.apply_gravity()
         self.player_animation_state()
        
-
 attack_sprite = pygame.sprite.Group()
 attack_sprite.add(Player())
 
@@ -162,10 +125,6 @@ x = int(Background_1.get_width() * scale_factor)
 y = int(Background_1.get_height() * scale_factor)
 Background_1 = pygame.transform.scale(Background_1, (x, y))
 
-
-
-
-
 player = pygame.sprite.GroupSingle()
 player.add(Player())
 while True:
@@ -173,15 +132,9 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
-        # if event.type == pygame.MOUSEBUTTONDOWN:
-        #     if event.key == :
-        #         Player.animate()
-    
     screen.blit(Background_1,(0,0))    
     player.draw(screen)
     player.update()
 
-
     pygame.display.update()
     clock.tick(60)
-       
