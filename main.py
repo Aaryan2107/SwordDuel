@@ -125,16 +125,89 @@ class Player(pygame.sprite.Sprite):
 
 
       
-class Ememy(pygame.sprite.Sprite):
+class Enemy(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-
-
+        
+    
+     
+    def scale_image(self,list,factor):
+        for i in range (len(list)):
+            x = int(list[i].get_width() *factor)
+            y = int(list[i].get_height() *factor)
+            list[i] = pygame.transform.scale(list[i], (x, y))    
+    
     def images_loader(self,path,number):
         images = []
         for i in range(1,number+1):
             img = pygame.image.load(f'{path}_{i}.png').convert_alpha()
             images.append(img)
+        return images
+
+    def update(self,player):
+        pass
+class Knight(Enemy):
+        def __init__(self): 
+            super().__init__()
+        
+            # Using the Ememy Parent class method to load images and scale them
+            self.Idle_list = self.images_loader("graphic/Enemy/Knight/Idle/Idle",4)
+            self.scale_image(self.Idle_list,5)
+            self.Idle_index = 0
+            self.image = self.Idle_list[self.Idle_index]
+            self.rect = self.image.get_rect(midbottom = (1200, 800))
+
+            # Knight Walk images 
+            self.Walk_list = self.images_loader("graphic/Enemy/Knight/Walk/Walk",8)
+            self.scale_image(self.Walk_list,5)
+            self.Walk_index = 0
+            self.image = self.Walk_list[self.Walk_index]
+
+            # Knight Attack images
+            self.Attack_list = self.images_loader("graphic/Enemy/Knight/Attack/Attack",7)
+            self.scale_image(self.Attack_list,5)
+            self.Attack_index = 0
+            self.image = self.Attack_list[self.Attack_index]
+            # Knight Cooldown
+            self.is_attacking = False
+            self.attack_cooldown = 1000  # milliseconds
+            self.attack_time = 0
+        def Enemy_AI(self, player):
+            if abs(player.rect.x - self.rect.x) < 600 and abs(player.rect.x - self.rect.x) > 240:  # player is nearby
+                if player.rect.x > self.rect.x :  # player is to the right
+                    self.rect.x += 2  # move right
+                if player.rect.x < self.rect.x :  # player is to the left
+                    self.rect.x -= 2  # move left
+                else:
+                    self.rect.x += 2  # move right
+            if abs(player.rect.x - self.rect.x) < 240:  # close enough to attack
+                self.rect.x = self.rect.x  # stop moving
+
+        def attack_Cooldown(self):
+            if is_attacking:
+                current_time = pygame.time.get_ticks()
+                if current_time - self.attack_time >= self.attack_cooldown:
+                    is_attacking = False
+        def Animation_state(self,player):
+            if abs(player.rect.x - self.rect.x) < 600 and abs(player.rect.x - self.rect.x) > 240:
+                self.Walk_index += 0.1
+                if self.Walk_index >= len(self.Walk_list): self.Walk_index = 0
+                self.image = self.Walk_list[int(self.Walk_index)]
+            elif abs(player.rect.x - self.rect.x) < 240:
+                self.Attack_index += 0.1
+                if self.Attack_index >= len(self.Attack_list): 
+                    self.Attack_index = 0
+                    
+                self.image = self.Attack_list[int(self.Attack_index)]
+            else:
+                self.Idle_index += 0.1
+                if self.Idle_index >= len(self.Idle_list): self.Idle_index = 0
+                self.image = self.Idle_list[int(self.Idle_index)]
+        def update(self,player):
+            self.Enemy_AI(player)
+            self.Animation_state(player)
+
+
 
 class Background(pygame.sprite.Sprite):
     def __init__(self):
@@ -166,8 +239,10 @@ Background_1 = pygame.transform.scale(Background_1, (x, y))
 
 player = pygame.sprite.GroupSingle()
 player.add(Player())
-# Ememy = pygame.sprite.Group()
-# Ememy.add(Ememy())
+# enemy = pygame.sprite.GroupSingle()
+# enemy.add(Enemy())
+Enemy_Group = pygame.sprite.Group()
+Enemy_Group.add(Knight())
 Game_Active = True
 while True:
     for event in pygame.event.get():
@@ -176,10 +251,15 @@ while True:
             exit()
     if Game_Active:
         screen.blit(Background_1,(0,0))    
+        Enemy_Group.draw(screen)
+        Enemy_Group.update(player.sprite)
         player.draw(screen)
         player.update()
-        # Ememy.draw(screen)
-        # Ememy.update()
+        # enemy.draw(screen)
+        # enemy.update()
+        # Enemy_Group.draw(screen)
+        # Enemy_Group.update(player.sprite)
+
 
     pygame.display.update()
     clock.tick(60)
