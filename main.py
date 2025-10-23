@@ -9,6 +9,8 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         self.space_pressed = False
         super().__init__()
+        self.health = 100
+        self.max_health = 100
         # Player Idle Position images
         self.Idle_List = self.images_loader("graphic/Player/Idle/Idle", 10)
         self.scale_image(self.Idle_List)
@@ -116,6 +118,16 @@ class Player(pygame.sprite.Sprite):
             self.Idle_index += 0.1
             if self.Idle_index >= len(self.Idle_List): self.Idle_index = 0
             self.image = self.Idle_List[int(self.Idle_index)]
+    def draw_health_bar(self, surface):
+        bar_width = 200
+        bar_height = 20
+        x, y = self.rect.centerx - 100, self.rect.top - 40
+        fill = (self.health / self.max_health) * bar_width
+        outline_rect = pygame.Rect(x, y, bar_width, bar_height)
+        fill_rect = pygame.Rect(x, y, fill, bar_height)
+        pygame.draw.rect(surface, (255, 0, 0), fill_rect)
+        pygame.draw.rect(surface, (255, 255, 255), outline_rect, 2)
+
         
     
     def update(self):
@@ -149,7 +161,9 @@ class Enemy(pygame.sprite.Sprite):
 class Knight(Enemy):
         def __init__(self): 
             super().__init__()
-        
+            self.health = 100
+            self.max_health = 100
+            self.damage = 5      
             # Using the Ememy Parent class method to load images and scale them
             self.Idle_list = self.images_loader("graphic/Enemy/Knight/Idle/Idle",4)
             self.scale_image(self.Idle_list,5)
@@ -203,6 +217,21 @@ class Knight(Enemy):
                 self.Idle_index += 0.1
                 if self.Idle_index >= len(self.Idle_list): self.Idle_index = 0
                 self.image = self.Idle_list[int(self.Idle_index)]
+        def draw_health_bar(self, surface):
+            bar_width = 150
+            bar_height = 15
+            x, y = self.rect.centerx - 75, self.rect.top - 25
+            fill = (self.health / self.max_health) * bar_width
+            outline_rect = pygame.Rect(x, y, bar_width, bar_height)
+            fill_rect = pygame.Rect(x, y, fill, bar_height)
+            pygame.draw.rect(surface, (255, 0, 0), fill_rect)
+            pygame.draw.rect(surface, (255, 255, 255), outline_rect, 2)
+
+        def take_damage(self, amount):
+            self.health -= amount
+                if self.health <= 0:
+                    self.kill()
+
         def update(self,player):
             self.Enemy_AI(player)
             self.Animation_state(player)
@@ -249,17 +278,56 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
-    if Game_Active:
-        screen.blit(Background_1,(0,0))    
-        Enemy_Group.draw(screen)
-        Enemy_Group.update(player.sprite)
-        player.draw(screen)
-        player.update()
-        # enemy.draw(screen)
-        # enemy.update()
-        # Enemy_Group.draw(screen)
-        # Enemy_Group.update(player.sprite)
 
+        # Restart game when Game Over
+        if not Game_Active and event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_r:
+                # Reset everything
+                player.sprite.health = 100
+                Enemy_Group.empty()
+                Enemy_Group.add(Knight())
+                Game_Active = True
+
+    if Game_Active:
+        screen.blit(Background_1, (0, 0))
+        Enemy_Group.update(player.sprite)
+        Enemy_Group.draw(screen)
+        player.update()
+        player.draw(screen)
+
+        # --- Combat interaction ---
+        for enemy in Enemy_Group:
+            # Enemy attacking player if close enough
+            if abs(enemy.rect.centerx - player.sprite.rect.centerx) < 120:
+                player.sprite.health -= 0.3  # enemy deals damage
+
+            # Player attacking enemy when left mouse clicked
+            if pygame.mouse.get_pressed()[0]:
+                if abs(enemy.rect.centerx - player.sprite.rect.centerx) < 200:
+                    enemy.take_damage(0.8)
+                    
+
+            # Draw enemy health bar
+            enemy.draw_health_bar(screen)
+
+        # Draw player health bar
+        player.sprite.draw_health_bar(screen)
+
+        # --- Game Over trigger ---
+        if player.sprite.health <= 0:
+            Game_Active = False
+
+    else:
+        # GAME OVER SCREEN
+        screen.fill((0, 0, 0))  
+
+        game_over_text = font.render("GAME OVER", True, (255, 0, 0))
+        restart_text = small_font.render("Press 'R' to Restart", True, (255, 255, 255))
+        game_over_rect = game_over_text.get_rect(center=(info.current_w // 2, info.current_h // 2 - 100))
+        restart_rect = restart_text.get_rect(center=(info.current_w // 2, info.current_h // 2 + 50))
+
+        screen.blit(game_over_text, game_over_rect)
+        screen.blit(restart_text, restart_rect)
 
     pygame.display.update()
     clock.tick(60)
