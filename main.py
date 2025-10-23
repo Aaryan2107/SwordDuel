@@ -127,14 +127,17 @@ class Player(pygame.sprite.Sprite):
         fill_rect = pygame.Rect(x, y, fill, bar_height)
         pygame.draw.rect(surface, (255, 0, 0), fill_rect)
         pygame.draw.rect(surface, (255, 255, 255), outline_rect, 2)
-
-        
-    
+  
     def update(self):
         self.player_input()
         self.apply_gravity()
         self.player_animation_state()
 
+    def reset(self):
+        self.health = self.max_health
+        self.rect = self.image.get_rect(midbottom = (120, 800))
+        self.gravity = 0         
+        self.space_pressed = False
 
       
 class Enemy(pygame.sprite.Sprite):
@@ -229,15 +232,13 @@ class Knight(Enemy):
 
         def take_damage(self, amount):
             self.health -= amount
-                if self.health <= 0:
-                    self.kill()
+            if self.health <= 0:
+                self.kill()
 
         def update(self,player):
             self.Enemy_AI(player)
             self.Animation_state(player)
-
-
-
+            
 class Background(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -273,6 +274,8 @@ player.add(Player())
 Enemy_Group = pygame.sprite.Group()
 Enemy_Group.add(Knight())
 Game_Active = True
+font = pygame.font.Font(None , 150) # font for game over text
+small_font = pygame.font.Font(None,60)
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -328,6 +331,6 @@ while True:
 
         screen.blit(game_over_text, game_over_rect)
         screen.blit(restart_text, restart_rect)
-
+        player.sprite.reset()
     pygame.display.update()
     clock.tick(60)
