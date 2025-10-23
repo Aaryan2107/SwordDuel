@@ -229,7 +229,7 @@ class Knight(Enemy):
 
         def take_damage(self, amount):
             self.health -= amount
-                if self.health <= 0:
+            if self.health <= 0:
                     self.kill()
 
         def update(self,player):
