@@ -14,6 +14,7 @@ class Player(pygame.sprite.Sprite):
         self.health = 100
         self.max_health = 100
         self.is_attacking = False  
+        self.direction = True  # True for right, False for left
         
         # Player Idle Position images
         self.Idle_List = self.images_loader("graphic/Player/Idle/Idle", 10)
@@ -58,6 +59,8 @@ class Player(pygame.sprite.Sprite):
         self.Turn_list = self.images_loader("graphic/Player/TurnAround/TurnAround",3)
         self.scale_image(self.Turn_list)  
         self.Turn_index = 0 
+        
+        
      
     # load images from a given path and number of images
     def images_loader(self,path,number):
@@ -67,25 +70,45 @@ class Player(pygame.sprite.Sprite):
             images.append(img)
         return images
     
+    # Handle player input for movement and actions`
     def player_input(self):
         key = pygame.key.get_pressed()
         mouse_Button = pygame.mouse.get_pressed()
+
+        # Jump
         if key[pygame.K_SPACE] and self.space_pressed == False:
             self.gravity = -20
             self.space_pressed = True
+
+        # Move Right
         if key[pygame.K_w]:
+            if not self.direction:  # if facing left before
+                self.direction = True
+                self.Player_filp_animation()  # flip to face right
             self.rect.x += 5
-        elif key[pygame.K_LSHIFT]:
-            self.rect.x += 10
+
+        # Move Left
         elif key[pygame.K_s]:
-            self.rect.x -= 10
-            
+            if self.direction:  # if facing right before
+                self.direction = False
+                self.Player_filp_animation()  # flip to face left
+            self.rect.x -= 5
+        
+        # Slide
+        elif key[pygame.K_LSHIFT]:
+           if self.direction:  self.rect.x += 10
+           else : self.rect.x -= 10
+        else:
+            pass
+
+    # Scale images by a factor of certain amount 
     def scale_image(self,list):
         for i in range (len(list)):
             x = int(list[i].get_width() *5)
             y = int(list[i].get_height() *5)
             list[i] = pygame.transform.scale(list[i], (x, y))    
     
+    #` Apply gravity to the player for jumping and falling
     def apply_gravity(self):
         self.gravity += 1
         self.rect.y += self.gravity
@@ -93,11 +116,28 @@ class Player(pygame.sprite.Sprite):
             self.rect.bottom = 800
             self.gravity = 0         
             self.space_pressed = False
-  
+
+    # Flip player images horizontally
+    def player_flip(self,list):
+        for i in range(len(list)):
+            list[i] = pygame.transform.flip(list[i], True, False)
+        return list
+    
+    # Flip all player animations when changing direction
+    def Player_filp_animation(self):
+        self.Idle_List = self.player_flip(self.Idle_List)
+        self.Run_List = self.player_flip(self.Run_List)
+        self.Jump_List = self.player_flip(self.Jump_List)
+        self.attack_list = self.player_flip(self.attack_list)
+        self.slide_list = self.player_flip(self.slide_list)
+        self.crouch_list = self.player_flip(self.crouch_list)
+        self.Turn_list = self.player_flip(self.Turn_list)
+
+
+    # Update player animation state based on actions
     def player_animation_state(self):
         keys = pygame.key.get_pressed()
         mouse_Button = pygame.mouse.get_pressed()
-    
         if mouse_Button[0]:
             self.is_attacking = True  
             self.attack_index += 0.2
@@ -109,32 +149,28 @@ class Player(pygame.sprite.Sprite):
             self.Jump_index += 0.1
             if self.Jump_index >= len(self.Jump_List): self.Jump_index = 0
             self.image = self.Jump_List[int(self.Jump_index)]
-        elif pygame.key.get_pressed()[pygame.K_w]: 
+        elif keys[pygame.K_w] or keys[pygame.K_s]: 
             self.is_attacking = False 
             self.Run_index +=0.1
             if self.Run_index >= len(self.Run_List): self.Run_index =0
             self.image = self.Run_List[int(self.Run_index)]
-        elif pygame.key.get_pressed()[pygame.K_LSHIFT]:
+        elif keys[pygame.K_LSHIFT]:
             self.is_attacking = False 
             self.slide_index +=0.2
             if self.slide_index >= len(self.slide_list): self.slide_index =0
             self.image = self.slide_list[int(self.slide_index)]
-        elif pygame.key.get_pressed()[pygame.K_c]:
+        elif keys[pygame.K_c]:
             self.is_attacking = False 
             self.crouch_index +=0.1
             if self.crouch_index >= len(self.crouch_list): self.crouch_index =0
             self.image = self.crouch_list[int(self.crouch_index)]
-        elif pygame.key.get_pressed()[pygame.K_s]:
-            self.is_attacking = False 
-            self.Turn_index +=0.1
-            if self.Turn_index >= len(self.Turn_list): self.Turn_index =0
-            self.image = self.Turn_list[int(self.Turn_index)]
         else:
             self.is_attacking = False 
             self.Idle_index += 0.1
             if self.Idle_index >= len(self.Idle_List): self.Idle_index = 0
             self.image = self.Idle_List[int(self.Idle_index)]
             
+    
     def draw_health_bar(self, surface):
         bar_width = 200
         bar_height = 20
@@ -203,10 +239,18 @@ class Knight(Enemy):
             self.scale_image(self.Attack_list,5)
             self.Attack_index = 0
             self.image = self.Attack_list[self.Attack_index]
+
+            # Knight Hit images
+            self.Hit_list = self.images_loader("graphic/Enemy/Knight/Hit/Hit",4)
+            self.scale_image(self.Hit_list,5)       
+            self.Hit_index = 0
+            self.image = self.Hit_list[self.Hit_index]
             # Knight Cooldown
             self.is_attacking = False
-            self.attack_cooldown = 1000  # milliseconds
+            self.attack_cooldown = 500 # milliseconds
             self.attack_time = 0
+            # Knight Direction
+            self.Direction = True  # True for left, False for right
             
         def Enemy_AI(self, player):
             if abs(player.rect.x - self.rect.x) < 600 and abs(player.rect.x - self.rect.x) > 240:  # player is nearby
@@ -216,12 +260,32 @@ class Knight(Enemy):
                     self.rect.x -= 2  # move left
             if abs(player.rect.x - self.rect.x) < 240:  # close enough to attack
                 self.rect.x = self.rect.x  # stop moving
-
+                self.attack_Cooldown()
+                    
+            if player.rect.x > self.rect.x and abs(player.rect.x - self.rect.x) >1 : # crossing  enemy
+                if self.Direction :
+                    self.Direction = False
+                    self.Enemy_flip_animation(player)
+            else : # player is on the left side
+                if not self.Direction:
+                    self.Direction = True
+                    self.Enemy_flip_animation(player)
+                
+        # Flip enemy images horizontally
+        def flip_enemy(self,list):
+            for i in range(len(list)):
+                list[i] = pygame.transform.flip(list[i], True, False)
+            return list
+        # Flip all enemy animations when changing direction
+        def Enemy_flip_animation(self,player):
+                self.Idle_list = self.flip_enemy(self.Idle_list)
+                self.Walk_list = self.flip_enemy(self.Walk_list)
+                self.Attack_list = self.flip_enemy(self.Attack_list)
         def attack_Cooldown(self):
-            if self.is_attacking:
-                current_time = pygame.time.get_ticks()
-                if current_time - self.attack_time >= self.attack_cooldown:
-                    self.is_attacking = False
+            current_time = pygame.time.get_ticks()
+            if current_time - self.attack_time >= self.attack_cooldown:
+                self.is_attacking = True
+                self.attack_time = current_time
                     
         def Animation_state(self,player):
             if abs(player.rect.x - self.rect.x) < 600 and abs(player.rect.x - self.rect.x) > 240:
@@ -229,13 +293,16 @@ class Knight(Enemy):
                 if self.Walk_index >= len(self.Walk_list): self.Walk_index = 0
                 self.image = self.Walk_list[int(self.Walk_index)]
             elif abs(player.rect.x - self.rect.x) < 240:
-                self.Attack_index += 0.1
-                if self.Attack_index >= len(self.Attack_list): 
-                    self.Attack_index = 0
-                self.image = self.Attack_list[int(self.Attack_index)]
+                if self.is_attacking:
+                    self.Attack_index += 0.1
+                    if self.Attack_index >= len(self.Attack_list): 
+                        self.Attack_index = 0
+                        self.is_attacking = False
+                    self.image = self.Attack_list[int(self.Attack_index)]
             else:
                 self.Idle_index += 0.1
-                if self.Idle_index >= len(self.Idle_list): self.Idle_index = 0
+                if self.Idle_index >= len(self.Idle_list): 
+                    self.Idle_index = 0
                 self.image = self.Idle_list[int(self.Idle_index)]
                 
         def draw_health_bar(self, surface):
