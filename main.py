@@ -1,6 +1,8 @@
 import pygame
 import math  
+import random  as random
 from sys import exit
+
 pygame.init()
 
 info = pygame.display.Info()
@@ -12,7 +14,7 @@ class Player(pygame.sprite.Sprite):
         self.space_pressed = False
         super().__init__()
         self.health = 100
-        self.max_health = 100
+        self.max_health = 100  
         self.is_attacking = False  
         self.direction = True  # True for right, False for left
         
@@ -61,7 +63,12 @@ class Player(pygame.sprite.Sprite):
         self.Turn_index = 0 
         
         
-     
+    def collide(self,Enemy):
+        if self.hitbox.colliderect(Enemy.hitbox):
+            if abs(Enemy.rect.centerx - self.rect.centerx) < 120:
+                if Enemy.is_attacking:
+                    self.health -=random.uniform(0.1,0.3)
+                  
     # load images from a given path and number of images
     def images_loader(self,path,number):
         images = []
@@ -106,7 +113,8 @@ class Player(pygame.sprite.Sprite):
         for i in range (len(list)):
             x = int(list[i].get_width() *5)
             y = int(list[i].get_height() *5)
-            list[i] = pygame.transform.scale(list[i], (x, y))    
+            list[i] = pygame.transform.scale(list[i], (x, y))   
+        return list 
     
     #` Apply gravity to the player for jumping and falling
     def apply_gravity(self):
@@ -170,16 +178,18 @@ class Player(pygame.sprite.Sprite):
             if self.Idle_index >= len(self.Idle_List): self.Idle_index = 0
             self.image = self.Idle_List[int(self.Idle_index)]
             
-    
-    def draw_health_bar(self, surface):
-        bar_width = 200
-        bar_height = 20
-        x, y = self.rect.centerx - 100, self.rect.top - 40
+    def draw_health_bar(self,screen):
+        Bar_Background = pygame.image.load('graphic/Player/HUD/bar_background.png').convert_alpha()
+        Bar_Background = pygame.transform.scale(Bar_Background,(int(Bar_Background.get_width()*5),int(Bar_Background.get_height()*10)))
+        Bar = pygame.image.load('graphic/Player/HUD/bar.png').convert_alpha()
+        Bar = pygame.transform.scale(Bar,(int(Bar.get_width()*5),int(Bar.get_height()*5)))
+        screen.blit(Bar_Background, (50, 10))
+        bar_width = Bar.get_width()*0.9
         fill = (self.health / self.max_health) * bar_width
-        outline_rect = pygame.Rect(x, y, bar_width, bar_height)
-        fill_rect = pygame.Rect(x, y, fill, bar_height)
-        pygame.draw.rect(surface, (255, 0, 0), fill_rect)
-        pygame.draw.rect(surface, (255, 255, 255), outline_rect, 2)
+        fill_rect = pygame.Rect(30, 15, fill, Bar.get_height()*0.7)
+        pygame.draw.rect(screen, (255, 0, 0), fill_rect)
+        screen.blit(Bar,(10,10) )
+
   
     def update(self):
         self.player_input()
@@ -247,7 +257,7 @@ class Knight(Enemy):
             self.image = self.Hit_list[self.Hit_index]
             # Knight Cooldown
             self.is_attacking = False
-            self.attack_cooldown = 500 # milliseconds
+            self.attack_cooldown = 1000 # milliseconds
             self.attack_time = 0
             # Knight Direction
             self.Direction = True  # True for left, False for right
@@ -557,10 +567,11 @@ while True:
 
         for enemy in Enemy_Group:
             if isinstance(enemy, Knight):
-                if abs(enemy.rect.centerx - player_sprite.rect.centerx) < 120:
-                    player_sprite.health -= 0.3  
-                if player_sprite.is_attacking and abs(enemy.rect.centerx - player_sprite.rect.centerx) < 200:
-                    enemy.take_damage(0.8)         
+                player.sprite.collide(enemy)
+                # if abs(enemy.rect.centerx - player_sprite.rect.centerx) < 120:
+                #     player_sprite.health -= 0.3  
+                # if player_sprite.is_attacking and abs(enemy.rect.centerx - player_sprite.rect.centerx) < 200:
+                #     enemy.take_damage(0.8)         
             elif isinstance(enemy, wizard):
                 if player_sprite.is_attacking and player_sprite.hitbox.colliderect(enemy.hitbox):
                     enemy.take_damage(0.8) 
@@ -589,7 +600,8 @@ while True:
             Game_Active = False
         elif not Enemy_Group and game_stage == 'wizard': 
             Game_Active = False
-
+        
+        
     else:
         screen.fill((0, 0, 0))  
         if player.sprite.health <= 0:
