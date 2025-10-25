@@ -257,6 +257,7 @@ class Knight(Enemy):
             self.image = self.Hit_list[self.Hit_index]
             # Knight Cooldown
             self.is_attacking = False
+            self.just_attacked = False
             self.attack_cooldown = 1000 # milliseconds
             self.attack_time = 0
             # Knight Direction
@@ -308,6 +309,7 @@ class Knight(Enemy):
                     if self.Attack_index >= len(self.Attack_list): 
                         self.Attack_index = 0
                         self.is_attacking = False
+                        self.just_attacked = True
                     self.image = self.Attack_list[int(self.Attack_index)]
             else:
                 self.Idle_index += 0.1
@@ -331,6 +333,7 @@ class Knight(Enemy):
                 self.kill()
 
         def update(self,player):
+            self.just_attacked = False
             self.Enemy_AI(player)
             self.Animation_state(player)
             self.hitbox.midbottom = self.rect.midbottom 
@@ -567,11 +570,10 @@ while True:
 
         for enemy in Enemy_Group:
             if isinstance(enemy, Knight):
-                player.sprite.collide(enemy)
-                # if abs(enemy.rect.centerx - player_sprite.rect.centerx) < 120:
-                #     player_sprite.health -= 0.3  
-                # if player_sprite.is_attacking and abs(enemy.rect.centerx - player_sprite.rect.centerx) < 200:
-                #     enemy.take_damage(0.8)         
+                if enemy.just_attacked and player_sprite.hitbox.colliderect(enemy.hitbox):
+                    player_sprite.health -= 15 
+                if player_sprite.is_attacking and abs(enemy.rect.centerx - player_sprite.rect.centerx) < 200:
+                    enemy.take_damage(0.8)         
             elif isinstance(enemy, wizard):
                 if player_sprite.is_attacking and player_sprite.hitbox.colliderect(enemy.hitbox):
                     enemy.take_damage(0.8) 
