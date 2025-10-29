@@ -7,6 +7,7 @@ pygame.init()
 
 info = pygame.display.Info()
 screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.NOFRAME)
+screen_width = info.current_w
 clock = pygame.time.Clock()
 
 class Player(pygame.sprite.Sprite):
@@ -157,12 +158,12 @@ class Player(pygame.sprite.Sprite):
             self.Jump_index += 0.1
             if self.Jump_index >= len(self.Jump_List): self.Jump_index = 0
             self.image = self.Jump_List[int(self.Jump_index)]
-        elif keys[pygame.K_a] or keys[pygame.K_d] or key[pygame.K_LEFT] or key[pygame.K_RIGHT]: 
+        elif keys[pygame.K_a] or keys[pygame.K_d] or keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]: 
             self.is_attacking = False 
             self.Run_index +=0.1
             if self.Run_index >= len(self.Run_List): self.Run_index =0
             self.image = self.Run_List[int(self.Run_index)]
-        elif keys[pygame.K_LSHIFT] or key[pygame.K_RSHIFT]:
+        elif keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
             self.is_attacking = False 
             self.slide_index +=0.2
             if self.slide_index >= len(self.slide_list): self.slide_index =0
@@ -631,4 +632,5 @@ while True:
             
     pygame.display.update()
     clock.tick(60)
+
 
