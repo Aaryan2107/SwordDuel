@@ -4,7 +4,7 @@ import random  as random
 from sys import exit
 
 pygame.init()
-
+pygame.mixer.init()
 info = pygame.display.Info()
 screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.NOFRAME)
 screen_width = info.current_w
@@ -89,14 +89,14 @@ class Player(pygame.sprite.Sprite):
             self.space_pressed = True
 
         # Move Right
-        if key[pygame.K_a] or key[pygame.K_LEFT]:
+        if key[pygame.K_d] or key[pygame.K_LEFT]:
             if not self.direction:  # if facing left before
                 self.direction = True
                 self.Player_filp_animation()  # flip to face right
             self.rect.x += 5
 
         # Move Left
-        elif key[pygame.K_d] or key[pygame.K_RIGHT]:
+        elif key[pygame.K_a] or key[pygame.K_RIGHT]:
             if self.direction:  # if facing right before
                 self.direction = False
                 self.Player_filp_animation()  # flip to face left
@@ -158,7 +158,7 @@ class Player(pygame.sprite.Sprite):
             self.Jump_index += 0.1
             if self.Jump_index >= len(self.Jump_List): self.Jump_index = 0
             self.image = self.Jump_List[int(self.Jump_index)]
-        elif keys[pygame.K_a] or keys[pygame.K_d] or keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]: 
+        elif keys[pygame.K_d] or keys[pygame.K_a] or keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]: 
             self.is_attacking = False 
             self.Run_index +=0.1
             if self.Run_index >= len(self.Run_List): self.Run_index =0
@@ -229,7 +229,69 @@ class Enemy(pygame.sprite.Sprite):
 
     def update(self,player):
         pass
+class PauseMenu:
+    def __init__(self, screen):
+        self.screen = screen
+        self.font_big = pygame.font.Font(None, 100)
+        self.font_small = pygame.font.Font(None, 60)
+        self.is_paused = False
 
+        # Load icons (add your own icons in "graphic/UI/")
+        try:
+            self.resume_icon = pygame.image.load("graphic/UI/resume_icon.png").convert_alpha()
+            self.exit_icon = pygame.image.load("graphic/UI/exit_icon.png").convert_alpha()
+        except:
+            self.resume_icon = pygame.Surface((50, 50))
+            self.resume_icon.fill((100, 200, 100))
+            self.exit_icon = pygame.Surface((50, 50))
+            self.exit_icon.fill((200, 80, 80))
+
+        # Resize icons
+        self.resume_icon = pygame.transform.scale(self.resume_icon, (50, 50))
+        self.exit_icon = pygame.transform.scale(self.exit_icon, (50, 50))
+
+        # Button rectangles
+        self.resume_rect = pygame.Rect(screen.get_width() // 2 - 120, screen.get_height() // 2 - 40, 240, 70)
+        self.exit_rect = pygame.Rect(screen.get_width() // 2 - 120, screen.get_height() // 2 + 50, 240, 70)
+
+    def draw(self):
+        # Semi-transparent dark overlay
+        overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        self.screen.blit(overlay, (0, 0))
+
+        # Popup box
+        popup_rect = pygame.Rect(self.screen.get_width() // 2 - 250, self.screen.get_height() // 2 - 200, 500, 350)
+        pygame.draw.rect(self.screen, (30, 30, 30), popup_rect, border_radius=20)
+        pygame.draw.rect(self.screen, (255, 255, 255), popup_rect, 3, border_radius=20)
+
+        # Title text
+        title = self.font_big.render("Paused", True, (255, 255, 255))
+        title_rect = title.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2 - 120))
+        self.screen.blit(title, title_rect)
+
+        # Resume button
+        pygame.draw.rect(self.screen, (90, 180, 90), self.resume_rect, border_radius=10)
+        pygame.draw.rect(self.screen, (255, 255, 255), self.resume_rect, 3, border_radius=10)
+        resume_text = self.font_small.render("Resume", True, (255, 255, 255))
+        self.screen.blit(resume_text, resume_text.get_rect(center=self.resume_rect.center))
+        self.screen.blit(self.resume_icon, (self.resume_rect.left + 10, self.resume_rect.centery - 25))
+
+        # Exit button
+        pygame.draw.rect(self.screen, (180, 60, 60), self.exit_rect, border_radius=10)
+        pygame.draw.rect(self.screen, (255, 255, 255), self.exit_rect, 3, border_radius=10)
+        exit_text = self.font_small.render("Exit", True, (255, 255, 255))
+        self.screen.blit(exit_text, exit_text.get_rect(center=self.exit_rect.center))
+        self.screen.blit(self.exit_icon, (self.exit_rect.left + 10, self.exit_rect.centery - 25))
+
+    def handle_input(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = event.pos
+            if self.resume_rect.collidepoint(mouse_pos):
+                self.is_paused = False  # Resume game
+            elif self.exit_rect.collidepoint(mouse_pos):
+                pygame.quit()
+                exit()
 class Knight(Enemy):
         def __init__(self): 
             super().__init__()
@@ -537,7 +599,7 @@ Enemy_Group = pygame.sprite.Group()
 Enemy_Group.add(Knight())
 projectile_group = pygame.sprite.Group() 
 game_stage = 'knight' 
-
+pause_menu = PauseMenu(screen)
 Game_Active = True
 font = pygame.font.Font(None , 150) 
 small_font = pygame.font.Font(None,60)
@@ -556,11 +618,15 @@ while True:
                 projectile_group.empty() 
                 Enemy_Group.add(Knight()) 
                 game_stage = 'knight'
+                pause_menu.draw()
                 Game_Active = True
                 
 
     if Game_Active:
-        screen.blit(Background_1, (0, 0))
+       if pause_menu.is_paused:
+           pause_menu.draw()
+       else:
+            screen.blit(Background_1, (0, 0))
 
         if not Enemy_Group and game_stage == 'knight':
             game_stage = 'wizard'
@@ -632,5 +698,6 @@ while True:
             
     pygame.display.update()
     clock.tick(60)
+
 
 
