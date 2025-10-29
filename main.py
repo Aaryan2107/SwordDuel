@@ -88,21 +88,21 @@ class Player(pygame.sprite.Sprite):
             self.space_pressed = True
 
         # Move Right
-        if key[pygame.K_w]:
+        if key[pygame.K_a] or key[pygame.K_LEFT]:
             if not self.direction:  # if facing left before
                 self.direction = True
                 self.Player_filp_animation()  # flip to face right
             self.rect.x += 5
 
         # Move Left
-        elif key[pygame.K_s]:
+        elif key[pygame.K_d] or key[pygame.K_RIGHT]:
             if self.direction:  # if facing right before
                 self.direction = False
                 self.Player_filp_animation()  # flip to face left
             self.rect.x -= 5
         
         # Slide
-        elif key[pygame.K_LSHIFT]:
+        elif key[pygame.K_LSHIFT] or key[pygame.K_RSHIFT]:
            if self.direction:  self.rect.x += 10
            else : self.rect.x -= 10
         else:
@@ -157,12 +157,12 @@ class Player(pygame.sprite.Sprite):
             self.Jump_index += 0.1
             if self.Jump_index >= len(self.Jump_List): self.Jump_index = 0
             self.image = self.Jump_List[int(self.Jump_index)]
-        elif keys[pygame.K_w] or keys[pygame.K_s]: 
+        elif keys[pygame.K_a] or keys[pygame.K_d] or key[pygame.K_LEFT] or key[pygame.K_RIGHT]: 
             self.is_attacking = False 
             self.Run_index +=0.1
             if self.Run_index >= len(self.Run_List): self.Run_index =0
             self.image = self.Run_List[int(self.Run_index)]
-        elif keys[pygame.K_LSHIFT]:
+        elif keys[pygame.K_LSHIFT] or key[pygame.K_RSHIFT]:
             self.is_attacking = False 
             self.slide_index +=0.2
             if self.slide_index >= len(self.slide_list): self.slide_index =0
@@ -177,6 +177,11 @@ class Player(pygame.sprite.Sprite):
             self.Idle_index += 0.1
             if self.Idle_index >= len(self.Idle_List): self.Idle_index = 0
             self.image = self.Idle_List[int(self.Idle_index)]
+        if self.rect.left < -235:
+            self.rect.left = -235
+        # Right boundary
+        if self.rect.right > screen_width+250:
+            self.rect.right = screen_width+250  
             
     def draw_health_bar(self,screen):
         Bar_Background = pygame.image.load('graphic/Player/HUD/bar_background.png').convert_alpha()
@@ -329,6 +334,7 @@ class Knight(Enemy):
 
         def take_damage(self, amount):
             self.health -= amount
+            
             if self.health <= 0:
                 self.kill()
 
@@ -550,6 +556,7 @@ while True:
                 Enemy_Group.add(Knight()) 
                 game_stage = 'knight'
                 Game_Active = True
+                
 
     if Game_Active:
         screen.blit(Background_1, (0, 0))
@@ -609,12 +616,14 @@ while True:
         if player.sprite.health <= 0:
             game_over_text = font.render("GAME OVER", True, (255, 0, 0))
             game_over_rect = game_over_text.get_rect(center=(info.current_w // 2, info.current_h // 2 - 100))
+            knight_win=pygame.mixer.Sound('audio/knight_win.mp3')
             screen.blit(game_over_text, game_over_rect)
         else:
             win_rect = win_text.get_rect(center=(info.current_w // 2, info.current_h // 2 - 100))
             screen.blit(win_text, win_rect)
         restart_text = small_font.render("Press 'R' to Restart", True, (255, 255, 255))
         restart_rect = restart_text.get_rect(center=(info.current_w // 2, info.current_h // 2 + 50))
+        player_win=pygame.mixer.Sound('audio/player_win.mp3')
         screen.blit(restart_text, restart_rect)
         
         if player.sprite.health <= 0:
@@ -622,3 +631,4 @@ while True:
             
     pygame.display.update()
     clock.tick(60)
+
