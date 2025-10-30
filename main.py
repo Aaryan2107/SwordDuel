@@ -571,7 +571,8 @@ class Boss(Enemy):
     def __init__(self):
         super().__init__()
         # Boss specific initialization can go here
-
+        self.health = 300  # Or any starting health
+        self.max_health = 300
         # Boss Idle images
         self.Idle_list = self.images_loader("graphic/Enemies/Boss/Idle/Idle",14)
         self.scale_image(self.Idle_list,1.35)
@@ -582,6 +583,7 @@ class Boss(Enemy):
         self.Walk_list = self.images_loader("graphic/Enemies/Boss/Walk/Walk",15)
         self.scale_image(self.Walk_list,1.35)
         self.Walk_index = 0
+        self.flip_enemy(self.Walk_list)
 
         # Boss Attack_1 images
         self.Attack_1_list = self.images_loader("graphic/Enemies/Boss/Attack_1/Attack",11)
@@ -617,6 +619,20 @@ class Boss(Enemy):
         self.Attack_2_list = self.flip_enemy(self.Attack_2_list)
         self.Attack_3_list = self.flip_enemy(self.Attack_3_list)
 
+    def draw_health_bar(self, surface):
+        bar_width = 150
+        bar_height = 15
+        x, y = self.rect.centerx - 75, self.rect.top - 25
+        fill = (self.health / self.max_health) * bar_width
+        outline_rect = pygame.Rect(x, y, bar_width, bar_height)
+        fill_rect = pygame.Rect(x, y, fill, bar_height)
+        pygame.draw.rect(surface, (255, 0, 0), fill_rect)
+        pygame.draw.rect(surface, (255, 255, 255), outline_rect, 2)
+
+    def take_damage(self, amount):
+        self.health -= amount
+        if self.health <= 0:
+            self.kill()
 
     def Enemy_AI(self, player):
     # Distance between player and boss
@@ -630,16 +646,16 @@ class Boss(Enemy):
                 self.rect.x -= 2  # Move left
 
         # When player is close enough, boss stops and prepares to attack
-        if distance <= 200:
+        if distance <= 300:
             self.rect.x = self.rect.x  # Stop movement
             self.attack_Cooldown()
 
         # Flip direction when player crosses over
-        if player.rect.x > self.rect.x and self.Direction:
-            self.Direction = False
+        if player.rect.x > self.rect.x and not self.Direction: # Player is right, Boss is Left
+            self.Direction = True # Change state to Right
             self.Boss_flip_Animation()
-        elif player.rect.x < self.rect.x and not self.Direction:
-            self.Direction = True
+        elif player.rect.x < self.rect.x and self.Direction: # Player is left, Boss is Right
+            self.Direction = False # Change state to Left
             self.Boss_flip_Animation()
 
 
@@ -673,9 +689,10 @@ class Boss(Enemy):
                     if self.Attack_1_index >= len(anim_list):
                         self.Attack_1_index = 0
                         self.is_attacking = False
+                        self.just_attacked = True
                         del self.current_attack
                     self.image = anim_list[int(self.Attack_1_index)]
-                    self.rect = self.image.get_rect(midbottom=(self.rect.centerx, self.ground_y))
+                    self.rect = self.image.get_rect(midbottom=(self.rect.centerx, self.ground_y + 200))
 
                 elif self.current_attack == 2:
                     anim_list = self.Attack_2_list
@@ -683,9 +700,10 @@ class Boss(Enemy):
                     if self.Attack_2_index >= len(anim_list):
                         self.Attack_2_index = 0
                         self.is_attacking = False
+                        self.just_attacked = True
                         del self.current_attack
                     self.image = anim_list[int(self.Attack_2_index)]
-                    self.rect = self.image.get_rect(midbottom=(self.rect.centerx, self.ground_y))
+                    self.rect = self.image.get_rect(midbottom=(self.rect.centerx, self.ground_y + 200))
 
                 elif self.current_attack == 3:
                     anim_list = self.Attack_3_list
@@ -693,9 +711,10 @@ class Boss(Enemy):
                     if self.Attack_3_index >= len(anim_list):
                         self.Attack_3_index = 0
                         self.is_attacking = False
+                        self.just_attacked = True
                         del self.current_attack
                     self.image = anim_list[int(self.Attack_3_index)]
-                    self.rect = self.image.get_rect(midbottom=(self.rect.centerx, self.ground_y))
+                    self.rect = self.image.get_rect(midbottom=(self.rect.centerx, self.ground_y + 200))
 
         # Idle animation when player is far
         else:
@@ -707,9 +726,10 @@ class Boss(Enemy):
 
 
     def update(self,player):
+        self.just_attacked = False
         self.Enemy_AI(player)
         self.Animation_state(player)
-        self.attack_Cooldown()
+        self.hitbox.midbottom = self.rect.midbottom
 
 class Background(pygame.sprite.Sprite):
     def __init__(self):
@@ -749,8 +769,8 @@ font = pygame.font.Font(None , 150)
 small_font = pygame.font.Font(None,60)
 win_text = font.render("YOU WIN", True, (0, 255, 0)) 
 
-Boss_enemy = pygame.sprite.GroupSingle()
-Boss_enemy.add(Boss())
+# Boss_enemy = pygame.sprite.GroupSingle()
+# Boss_enemy.add(Boss())
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -777,7 +797,11 @@ while True:
                 if not Enemy_Group and game_stage == 'knight':
                     game_stage = 'wizard'
                     Enemy_Group.add(wizard(projectile_group, player.sprite))
-            
+
+                elif not Enemy_Group and game_stage == 'wizard':
+                    game_stage = 'boss'
+                    Enemy_Group.add(Boss())
+
                 Enemy_Group.update(player.sprite)
                 projectile_group.update()
                 player.update()
@@ -798,6 +822,11 @@ while True:
                 if player_sprite.is_attacking and player_sprite.hitbox.colliderect(enemy.hitbox):
                     enemy.take_damage(0.8) 
 
+            elif isinstance(enemy, Boss):
+                    if enemy.just_attacked and player_sprite.hitbox.colliderect(enemy.hitbox):
+                        player_sprite.health -= 25 
+                    if player_sprite.is_attacking and player_sprite.hitbox.colliderect(enemy.hitbox):
+                        enemy.take_damage(0.8)
             enemy.draw_health_bar(screen)
 
         for proj in projectile_group:
@@ -820,11 +849,9 @@ while True:
 
         if player.sprite.health <= 0:
             Game_Active = False
-        elif not Enemy_Group and game_stage == 'wizard': 
-            Game_Active = False
-        Boss_enemy.draw(screen)
-        Boss_enemy.update(player_sprite)
-       
+        elif not Enemy_Group and game_stage == 'boss': 
+                Game_Active = False
+        
         
     else:
         screen.fill((0, 0, 0))  
@@ -846,6 +873,3 @@ while True:
         
     pygame.display.update()
     clock.tick(60)
-
-
-
