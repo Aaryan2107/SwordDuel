@@ -62,6 +62,31 @@ class Player(pygame.sprite.Sprite):
         self.Turn_list = self.images_loader("graphic/Player/TurnAround/TurnAround",3)
         self.scale_image(self.Turn_list)  
         self.Turn_index = 0 
+
+        self.total_Flask = 3
+        self.last_flask_use = 0
+        self.flask_cooldown = 1000  # milliseconds (1 sec between uses)
+         # --- Healing Flask setup ---
+        self.Flask = pygame.image.load('graphic/Player/HUD/Health_Flask.png').convert_alpha()
+        self.Flask = pygame.transform.scale(
+            self.Flask,(int(self.Flask.get_width() * 3), int(self.Flask.get_height() * 3))
+        )
+        
+
+    def Healing_Flask(self):
+        keys = pygame.key.get_pressed()
+        current_time = pygame.time.get_ticks()
+
+        # Check for key press and cooldown
+        if keys[pygame.K_1] and self.total_Flask > 0 and self.max_health>self.health and current_time - self.last_flask_use > self.flask_cooldown:
+            self.health = self.max_health
+            self.total_Flask -= 1
+            self.last_flask_use = current_time
+
+
+    def Draw_Flasks(self, surface):
+        for i in range(self.total_Flask):
+            surface.blit(self.Flask, (50 + i * 70, 100)) 
         
         
     def collide(self,Enemy):
@@ -201,6 +226,7 @@ class Player(pygame.sprite.Sprite):
         self.player_input()
         self.apply_gravity()
         self.player_animation_state()
+        self.Healing_Flask()
         self.hitbox.midbottom = self.rect.midbottom 
 
     def reset(self):
@@ -963,6 +989,7 @@ while True:
             # Draw the game in the background, then the menu on top
             level_manager.draw()
             player.draw(screen)
+            player.sprite.Draw_Flasks(screen)
             player.sprite.draw_health_bar(screen)
             player.sprite.draw_health_bar(screen)
             # Draw pause menu last
@@ -981,6 +1008,7 @@ while True:
             # Draw player and health bar only if not transitioning
             if not level_manager.transitioning:
                 player.draw(screen)
+                player.sprite.Draw_Flasks(screen)
                 player.sprite.draw_health_bar(screen)
 
                 # collision and damage logic
