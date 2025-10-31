@@ -63,6 +63,32 @@ class Player(pygame.sprite.Sprite):
         self.scale_image(self.Turn_list)  
         self.Turn_index = 0 
         
+        self.total_Flask = 3
+        self.last_flask_use = 0
+        self.flask_cooldown = 1000  # milliseconds (1 sec between uses)
+         # --- Healing Flask setup ---
+        self.Flask = pygame.image.load('graphic/Player/HUD/Health_Flask.png').convert_alpha()
+        self.Flask = pygame.transform.scale(
+            self.Flask,(int(self.Flask.get_width() * 3), int(self.Flask.get_height() * 3))
+        )
+        
+
+    def Healing_Flask(self):
+        keys = pygame.key.get_pressed()
+        current_time = pygame.time.get_ticks()
+
+        # Check for key press and cooldown
+        if keys[pygame.K_1] and self.total_Flask > 0 and self.max_health>self.health and current_time - self.last_flask_use > self.flask_cooldown:
+            self.health = self.max_health
+            self.total_Flask -= 1
+            self.last_flask_use = current_time
+
+
+    def Draw_Flasks(self, surface):
+        for i in range(self.total_Flask):
+            surface.blit(self.Flask, (50 + i * 70, 100)) 
+        
+            
         
     def collide(self,Enemy):
         if self.hitbox.colliderect(Enemy.hitbox):
@@ -197,11 +223,14 @@ class Player(pygame.sprite.Sprite):
         screen.blit(Bar,(10,10) )
 
   
-    def update(self):
+    def update(self,screen):
         self.player_input()
         self.apply_gravity()
         self.player_animation_state()
+        self.Draw_Flasks(screen)
+        self.Healing_Flask()
         self.hitbox.midbottom = self.rect.midbottom 
+        
 
     def reset(self):
         self.health = self.max_health
@@ -413,7 +442,7 @@ class Knight(Enemy):
                 self.Walk_index += 0.1
                 if self.Walk_index >= len(self.Walk_list): self.Walk_index = 0
                 self.image = self.Walk_list[int(self.Walk_index)]
-            elif abs(player.rect.x - self.rect.x) < 240:
+            elif abs(player.rect.x - self.rect.x) < 300:
                 if self.is_attacking:
                     self.Attack_index += 0.1
                     if self.Attack_index >= len(self.Attack_list): 
@@ -948,7 +977,7 @@ while True:
 
             Enemy_Group.update(player.sprite)
             projectile_group.update()
-            player.update()
+            player.update(screen)
                 
             Enemy_Group.draw(screen)
             projectile_group.draw(screen)
