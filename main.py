@@ -236,6 +236,10 @@ class Enemy(pygame.sprite.Sprite):
         pass
 class PauseMenu:
     def __init__(self, screen):
+        self.screen = screen
+        self.is_paused = False 
+        self.font_big = pygame.font.Font(None, 80)
+        self.font_small = pygame.font.Font(None, 50)
     
 
         # Button rectangles
@@ -740,10 +744,12 @@ class Level:
         self.current_level = 1
         self.enemy_group = pygame.sprite.Group()
         self.transitioning = False
+        
 
         # Backgrounds for each level
         self.backgrounds = [
             "graphic/Background/background.png",
+            "graphic/Background/background1.png",
             "graphic/Background/background2.png",
             "graphic/Background/background3.png"
         ]
@@ -777,7 +783,7 @@ class Level:
         elif level_num == 2:
             self.enemy_group.add(wizard(self.projectile_group, self.player.sprite))
         elif level_num == 3:
-            boss = Knight()
+            boss = Boss()
             boss.health = 200
             boss.rect.centerx += 200
             self.enemy_group.add(boss)
@@ -809,11 +815,11 @@ class Level:
             self.current_level += 1
             self.transitioning = False
             self.load_level(self.current_level)
-# Background_1 = pygame.image.load('graphic/Background/background.png')
-# scale_factor = 0.8
-# x = int(Background_1.get_width() * scale_factor)
-# y = int(Background_1.get_height() * scale_factor)
-# Background_1 = pygame.transform.scale(Background_1, (x, y))
+Background_1 = pygame.image.load('graphic/Background/background.png')
+scale_factor = 0.8
+x = int(Background_1.get_width() * scale_factor)
+y = int(Background_1.get_height() * scale_factor)
+Background_1 = pygame.transform.scale(Background_1, (x, y))
 
 player = pygame.sprite.GroupSingle()
 player.add(Player())
@@ -827,8 +833,6 @@ font = pygame.font.Font(None , 150)
 small_font = pygame.font.Font(None,60)
 win_text = font.render("YOU WIN", True, (0, 255, 0)) 
 
-# Boss_enemy = pygame.sprite.GroupSingle()
-# Boss_enemy.add(Boss())
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -842,74 +846,78 @@ while True:
                 projectile_group.empty() 
                 Enemy_Group.add(Knight()) 
                 game_stage = 'knight'
-                pause_menu.draw()
                 Game_Active = True
-                
+        if Game_Active:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                pause_menu.is_paused = not pause_menu.is_paused 
+
+            if pause_menu.is_paused:
+                pause_menu.handle_input(event)        
 
     if Game_Active:
         if pause_menu.is_paused:
             pause_menu.draw()
         else:
-                screen.blit(Background_1, (0, 0))
+            screen.blit(Background_1, (0, 0))
 
-                if not Enemy_Group and game_stage == 'knight':
-                    game_stage = 'wizard'
-                    Enemy_Group.add(wizard(projectile_group, player.sprite))
+            if not Enemy_Group and game_stage == 'knight':
+                game_stage = 'wizard'
+                Enemy_Group.add(wizard(projectile_group, player.sprite))
 
-                elif not Enemy_Group and game_stage == 'wizard':
-                    game_stage = 'boss'
-                    Enemy_Group.add(Boss())
+            elif not Enemy_Group and game_stage == 'wizard':
+                game_stage = 'boss'
+                Enemy_Group.add(Boss())
 
-                Enemy_Group.update(player.sprite)
-                projectile_group.update()
-                player.update()
+            Enemy_Group.update(player.sprite)
+            projectile_group.update()
+            player.update()
                 
-                Enemy_Group.draw(screen)
-                projectile_group.draw(screen)
-                player.draw(screen)
+            Enemy_Group.draw(screen)
+            projectile_group.draw(screen)
+            player.draw(screen)
                 
-                player_sprite = player.sprite
+            player_sprite = player.sprite
 
-        for enemy in Enemy_Group:
-            if isinstance(enemy, Knight):
-                if enemy.just_attacked and player_sprite.hitbox.colliderect(enemy.hitbox):
-                    player_sprite.health -= 15 
-                if player_sprite.is_attacking and abs(enemy.rect.centerx - player_sprite.rect.centerx) < 200:
-                    enemy.take_damage(0.8)         
-            elif isinstance(enemy, wizard):
-                if player_sprite.is_attacking and player_sprite.hitbox.colliderect(enemy.hitbox):
-                    enemy.take_damage(0.8) 
-
-            elif isinstance(enemy, Boss):
+            for enemy in Enemy_Group:
+                if isinstance(enemy, Knight):
                     if enemy.just_attacked and player_sprite.hitbox.colliderect(enemy.hitbox):
-                        player_sprite.health -= 25 
+                        player_sprite.health -= 15 
+                    if player_sprite.is_attacking and abs(enemy.rect.centerx - player_sprite.rect.centerx) < 200:
+                        enemy.take_damage(0.8)         
+                elif isinstance(enemy, wizard):
                     if player_sprite.is_attacking and player_sprite.hitbox.colliderect(enemy.hitbox):
-                        enemy.take_damage(0.8)
-            enemy.draw_health_bar(screen)
+                        enemy.take_damage(0.8) 
 
-        for proj in projectile_group:
-            if player_sprite.is_attacking and not proj.deflected:
-                if player_sprite.rect.colliderect(proj.hitbox): 
-                    proj.deflect()
-            elif not proj.deflected:
-                if player_sprite.hitbox.colliderect(proj.hitbox):
-                    player_sprite.health -= 10 
-                    proj.kill()
+                elif isinstance(enemy, Boss):
+                        if enemy.just_attacked and player_sprite.hitbox.colliderect(enemy.hitbox):
+                            player_sprite.health -= 25 
+                        if player_sprite.is_attacking and player_sprite.hitbox.colliderect(enemy.hitbox):
+                            enemy.take_damage(0.8)
+                enemy.draw_health_bar(screen)
 
-        for enemy in Enemy_Group:
-            if isinstance(enemy, wizard): 
-                for proj in projectile_group:
-                    if enemy.hitbox.colliderect(proj.hitbox) and proj.deflected:
-                        enemy.take_damage(25) 
-                        proj.kill() 
+            for proj in projectile_group:
+                if player_sprite.is_attacking and not proj.deflected:
+                    if player_sprite.rect.colliderect(proj.hitbox): 
+                        proj.deflect()
+                elif not proj.deflected:
+                    if player_sprite.hitbox.colliderect(proj.hitbox):
+                        player_sprite.health -= 10 
+                        proj.kill()
 
-        player.sprite.draw_health_bar(screen)
+            for enemy in Enemy_Group:
+                if isinstance(enemy, wizard): 
+                    for proj in projectile_group:
+                        if enemy.hitbox.colliderect(proj.hitbox) and proj.deflected:
+                            enemy.take_damage(25) 
+                            proj.kill() 
 
-        if player.sprite.health <= 0:
-            Game_Active = False
-        elif not Enemy_Group and game_stage == 'boss': 
+            player.sprite.draw_health_bar(screen)
+
+            if player.sprite.health <= 0:
                 Game_Active = False
-        
+            elif not Enemy_Group and game_stage == 'boss': 
+                    Game_Active = False
+            
         
     else:
         screen.fill((0, 0, 0))  
@@ -931,4 +939,3 @@ while True:
         
     pygame.display.update()
     clock.tick(60)
-
