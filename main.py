@@ -236,24 +236,7 @@ class Enemy(pygame.sprite.Sprite):
         pass
 class PauseMenu:
     def __init__(self, screen):
-        self.screen = screen
-        self.font_big = pygame.font.Font(None, 100)
-        self.font_small = pygame.font.Font(None, 60)
-        self.is_paused = False
-
-        # Load icons (add your own icons in "graphic/UI/")
-        try:
-            self.resume_icon = pygame.image.load("graphic/UI/resume_icon.png").convert_alpha()
-            self.exit_icon = pygame.image.load("graphic/UI/exit_icon.png").convert_alpha()
-        except:
-            self.resume_icon = pygame.Surface((50, 50))
-            self.resume_icon.fill((100, 200, 100))
-            self.exit_icon = pygame.Surface((50, 50))
-            self.exit_icon.fill((200, 80, 80))
-
-        # Resize icons
-        self.resume_icon = pygame.transform.scale(self.resume_icon, (50, 50))
-        self.exit_icon = pygame.transform.scale(self.exit_icon, (50, 50))
+    
 
         # Button rectangles
         self.resume_rect = pygame.Rect(screen.get_width() // 2 - 120, screen.get_height() // 2 - 40, 240, 70)
@@ -280,14 +263,13 @@ class PauseMenu:
         pygame.draw.rect(self.screen, (255, 255, 255), self.resume_rect, 3, border_radius=10)
         resume_text = self.font_small.render("Resume", True, (255, 255, 255))
         self.screen.blit(resume_text, resume_text.get_rect(center=self.resume_rect.center))
-        self.screen.blit(self.resume_icon, (self.resume_rect.left + 10, self.resume_rect.centery - 25))
+
 
         # Exit button
         pygame.draw.rect(self.screen, (180, 60, 60), self.exit_rect, border_radius=10)
         pygame.draw.rect(self.screen, (255, 255, 255), self.exit_rect, 3, border_radius=10)
         exit_text = self.font_small.render("Exit", True, (255, 255, 255))
         self.screen.blit(exit_text, exit_text.get_rect(center=self.exit_rect.center))
-        self.screen.blit(self.exit_icon, (self.exit_rect.left + 10, self.exit_rect.centery - 25))
 
     def handle_input(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -750,12 +732,88 @@ class Background(pygame.sprite.Sprite):
     
     def update(self,level): 
         self.Level(level) 
-        
-Background_1 = pygame.image.load('graphic/Background/background.png')
-scale_factor = 0.8
-x = int(Background_1.get_width() * scale_factor)
-y = int(Background_1.get_height() * scale_factor)
-Background_1 = pygame.transform.scale(Background_1, (x, y))
+class Level:
+    def __init__(self, screen, player, projectile_group):
+        self.screen = screen
+        self.player = player
+        self.projectile_group = projectile_group
+        self.current_level = 1
+        self.enemy_group = pygame.sprite.Group()
+        self.transitioning = False
+
+        # Backgrounds for each level
+        self.backgrounds = [
+            "graphic/Background/background.png",
+            "graphic/Background/background2.png",
+            "graphic/Background/background3.png"
+        ]
+
+        # Optional background music per level
+        self.music = [
+            "audio/level1.mp3",
+            "audio/level2.mp3",
+            "audio/level3.mp3"
+        ]
+
+        self.load_level(self.current_level)
+
+    def load_level(self, level_num):
+        """Load a specific level: background, enemies, and music."""
+        self.enemy_group.empty()
+        self.projectile_group.empty()
+
+        # Background
+        idx = min(level_num - 1, len(self.backgrounds) - 1)
+        bg_path = self.backgrounds[idx]
+        self.bg_image = pygame.image.load(bg_path).convert()
+        self.bg_image = pygame.transform.scale(
+            self.bg_image,
+            (int(self.bg_image.get_width() * 0.8), int(self.bg_image.get_height() * 0.8))
+        )
+
+        # Spawn enemies
+        if level_num == 1:
+            self.enemy_group.add(Knight())
+        elif level_num == 2:
+            self.enemy_group.add(wizard(self.projectile_group, self.player.sprite))
+        elif level_num == 3:
+            boss = Knight()
+            boss.health = 200
+            boss.rect.centerx += 200
+            self.enemy_group.add(boss)
+
+
+    def update(self):
+        """Draw and update the current level."""
+        self.screen.blit(self.bg_image, (0, 0))
+
+        # Enemies and projectiles
+        self.enemy_group.update(self.player.sprite)
+        self.enemy_group.draw(self.screen)
+        self.projectile_group.update()
+        self.projectile_group.draw(self.screen)
+
+        # Draw enemy health bars
+        for enemy in self.enemy_group:
+            enemy.draw_health_bar(self.screen)
+
+        # Check if all enemies defeated
+        if not self.enemy_group and not self.transitioning:
+            self.transitioning = True
+            pygame.time.set_timer(pygame.USEREVENT + 1, 1500)  # 1.5 s delay
+
+    def handle_transition(self, event):
+        """Move to next level when timer event fires."""
+        if event.type == pygame.USEREVENT + 1 and self.transitioning:
+            pygame.time.set_timer(pygame.USEREVENT + 1, 0)
+            self.current_level += 1
+            self.transitioning = False
+            self.load_level(self.current_level)
+# Background_1 = pygame.image.load('graphic/Background/background.png')
+# scale_factor = 0.8
+# x = int(Background_1.get_width() * scale_factor)
+# y = int(Background_1.get_height() * scale_factor)
+# Background_1 = pygame.transform.scale(Background_1, (x, y))
 
 player = pygame.sprite.GroupSingle()
 player.add(Player())
@@ -873,3 +931,4 @@ while True:
         
     pygame.display.update()
     clock.tick(60)
+
