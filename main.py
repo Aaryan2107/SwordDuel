@@ -772,26 +772,7 @@ class Boss(Enemy):
         self.Enemy_AI(player)
         self.Animation_state(player)
         self.hitbox.midbottom = self.rect.midbottom
-
-class Background(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-        Background_1 = pygame.image.load('graphic/Background/background.png')
-        Background_2 = pygame.image.load('graphic/Background/background1.png')
-        Background_3 = pygame.image.load('graphic/Background/background2.png')
-        Background_4 = pygame.image.load('graphic/Background/background3.png')
-        self.background_list = [Background_1,Background_2,Background_3,Background_4]
-        self.Background__index =0 
         
-    def Level(self,level): 
-        if level == 0:
-            screen.blit(self.background_list[self.Background__index])
-        elif level == 1 :
-            screen.blit(self.background_list[self.Background__index+1])
-        else: pass 
-    
-    def update(self,level): 
-        self.Level(level) 
 class Level:
     def __init__(self, screen, player, projectile_group):
         self.screen = screen
@@ -809,41 +790,34 @@ class Level:
             "graphic/Background/background2.png",
             "graphic/Background/background3.png"
         ]
-
-        # Optional background music per level
-        self.music = [
-            "audio/level1.mp3",
-            "audio/level2.mp3",
-            "audio/level3.mp3"
-        ]
-
         self.load_level(self.current_level)
 
     def load_level(self, level_num):
         """Load a specific level: background, enemies, and music."""
         self.enemy_group.empty()
         self.projectile_group.empty()
-
-        # Background
-        idx = min(level_num - 1, len(self.backgrounds) - 1)
-        bg_path = self.backgrounds[idx]
-        self.bg_image = pygame.image.load(bg_path).convert()
-        self.bg_image = pygame.transform.scale(
-            self.bg_image,
-            (int(self.bg_image.get_width() * 0.8), int(self.bg_image.get_height() * 0.8))
-        )
-
         # Spawn enemies
         if level_num == 1:
             self.enemy_group.add(Knight())
+            self.enemy_group.add(Knight())
+            background = pygame.image.load(self.backgrounds[0]).convert()
+            background = pygame.transform.scale(background, (screen.get_width(), screen.get_height()))
+            screen.blit(background, (0, 0)) 
         elif level_num == 2:
             self.enemy_group.add(wizard(self.projectile_group, self.player.sprite))
+            self.enemy_group.add(Knight())
+            background = pygame.image.load(self.backgrounds[1]).convert()
+            background = pygame.transform.scale(background, (screen.get_width(), screen.get_height()))
+            screen.blit(background, (0, 0)) 
         elif level_num == 3:
             boss = Boss()
             boss.health = 200
             boss.rect.centerx += 200
             self.enemy_group.add(boss)
-
+            self.enemy_group.add(Knight())
+            background = pygame.image.load(self.backgrounds[2]).convert()
+            background = pygame.transform.scale(background, (screen.get_width(), screen.get_height()))
+            screen.blit(background, (0, 0)) 
 
     def update(self):
         """Draw and update the current level."""
@@ -1052,3 +1026,4 @@ while True:
     
     pygame.display.update()
     clock.tick(60)
+
