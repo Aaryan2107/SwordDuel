@@ -63,32 +63,6 @@ class Player(pygame.sprite.Sprite):
         self.scale_image(self.Turn_list)  
         self.Turn_index = 0 
         
-        self.total_Flask = 3
-        self.last_flask_use = 0
-        self.flask_cooldown = 1000  # milliseconds (1 sec between uses)
-         # --- Healing Flask setup ---
-        self.Flask = pygame.image.load('graphic/Player/HUD/Health_Flask.png').convert_alpha()
-        self.Flask = pygame.transform.scale(
-            self.Flask,(int(self.Flask.get_width() * 3), int(self.Flask.get_height() * 3))
-        )
-        
-
-    def Healing_Flask(self):
-        keys = pygame.key.get_pressed()
-        current_time = pygame.time.get_ticks()
-
-        # Check for key press and cooldown
-        if keys[pygame.K_1] and self.total_Flask > 0 and self.max_health>self.health and current_time - self.last_flask_use > self.flask_cooldown:
-            self.health = self.max_health
-            self.total_Flask -= 1
-            self.last_flask_use = current_time
-
-
-    def Draw_Flasks(self, surface):
-        for i in range(self.total_Flask):
-            surface.blit(self.Flask, (50 + i * 70, 100)) 
-        
-            
         
     def collide(self,Enemy):
         if self.hitbox.colliderect(Enemy.hitbox):
@@ -223,14 +197,11 @@ class Player(pygame.sprite.Sprite):
         screen.blit(Bar,(10,10) )
 
   
-    def update(self,screen):
+    def update(self):
         self.player_input()
         self.apply_gravity()
         self.player_animation_state()
-        self.Draw_Flasks(screen)
-        self.Healing_Flask()
         self.hitbox.midbottom = self.rect.midbottom 
-        
 
     def reset(self):
         self.health = self.max_health
@@ -442,7 +413,7 @@ class Knight(Enemy):
                 self.Walk_index += 0.1
                 if self.Walk_index >= len(self.Walk_list): self.Walk_index = 0
                 self.image = self.Walk_list[int(self.Walk_index)]
-            elif abs(player.rect.x - self.rect.x) < 300:
+            elif abs(player.rect.x - self.rect.x) < 240:
                 if self.is_attacking:
                     self.Attack_index += 0.1
                     if self.Attack_index >= len(self.Attack_list): 
@@ -801,7 +772,7 @@ class Boss(Enemy):
         self.Enemy_AI(player)
         self.Animation_state(player)
         self.hitbox.midbottom = self.rect.midbottom
-        
+
 class Level:
     def __init__(self, screen, player, projectile_group):
         self.screen = screen
@@ -810,70 +781,101 @@ class Level:
         self.current_level = 1
         self.enemy_group = pygame.sprite.Group()
         self.transitioning = False
-        
+        self.win_triggered = False # Flag to signal the game is won
+        self.font = pygame.font.Font(None, 80) # Font for transition text
 
-        # Backgrounds for each level
+
+    # Backgrounds for each level
         self.backgrounds = [
-            "graphic/Background/background.png",
-            "graphic/Background/background1.png",
-            "graphic/Background/background2.png",
+            "graphic/Background/background.png", 
+            "graphic/Background/background1.png", 
+            "graphic/Background/background2.png", 
             "graphic/Background/background3.png"
-        ]
+            ]
+
+# Optional background music per level
+        self.music = [
+            "audio/level1.mp3",
+            "audio/level2.mp3",
+            "audio/level3.mp3"
+            ]
+
         self.load_level(self.current_level)
 
     def load_level(self, level_num):
-        """Load a specific level: background, enemies, and music."""
+        self.player.sprite.reset() 
         self.enemy_group.empty()
         self.projectile_group.empty()
+
+        # Background
+        # Use user-specified backgrounds
+        if level_num == 1:
+            bg_path = self.backgrounds[0]
+        elif level_num == 2:
+            bg_path = self.backgrounds[1]
+        elif level_num == 3:
+            bg_path = self.backgrounds[2]
+        else:
+            bg_path = self.backgrounds[0] # Default
+
+        self.bg_image = pygame.image.load(bg_path).convert()
+        self.bg_image = pygame.transform.scale(self.bg_image,
+                                               (int(self.bg_image.get_width() * 0.8),
+                                                 int(self.bg_image.get_height() * 0.8)))
+
         # Spawn enemies
         if level_num == 1:
             self.enemy_group.add(Knight())
-            self.enemy_group.add(Knight())
-            background = pygame.image.load(self.backgrounds[0]).convert()
-            background = pygame.transform.scale(background, (screen.get_width(), screen.get_height()))
-            screen.blit(background, (0, 0)) 
         elif level_num == 2:
             self.enemy_group.add(wizard(self.projectile_group, self.player.sprite))
-            self.enemy_group.add(Knight())
-            background = pygame.image.load(self.backgrounds[1]).convert()
-            background = pygame.transform.scale(background, (screen.get_width(), screen.get_height()))
-            screen.blit(background, (0, 0)) 
         elif level_num == 3:
             boss = Boss()
-            boss.health = 200
+            boss.health = 200 
             boss.rect.centerx += 200
             self.enemy_group.add(boss)
-            self.enemy_group.add(Knight())
-            background = pygame.image.load(self.backgrounds[2]).convert()
-            background = pygame.transform.scale(background, (screen.get_width(), screen.get_height()))
-            screen.blit(background, (0, 0)) 
 
-    def update(self):
-        """Draw and update the current level."""
-        self.screen.blit(self.bg_image, (0, 0))
+    def update_logic(self):
+        if self.transitioning or self.win_triggered:
+            return
 
         # Enemies and projectiles
         self.enemy_group.update(self.player.sprite)
-        self.enemy_group.draw(self.screen)
         self.projectile_group.update()
+
+        # Check if all enemies defeated
+        if not self.enemy_group and not self.transitioning:
+            self.transitioning = True
+            # 2 second delay 
+            pygame.time.set_timer(pygame.USEREVENT + 1, 2000) 
+
+    def draw(self):
+        # draw black screen
+        if self.transitioning:
+            self.screen.fill((0, 0, 0))
+            cleared_text = self.font.render("Level Cleared", True, (255, 255, 255))
+            text_rect = cleared_text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+            self.screen.blit(cleared_text, text_rect)
+            return # Don't draw anything else
+        
+        self.screen.blit(self.bg_image, (0, 0))
+        self.enemy_group.draw(self.screen)
         self.projectile_group.draw(self.screen)
 
         # Draw enemy health bars
         for enemy in self.enemy_group:
             enemy.draw_health_bar(self.screen)
 
-        # Check if all enemies defeated
-        if not self.enemy_group and not self.transitioning:
-            self.transitioning = True
-            pygame.time.set_timer(pygame.USEREVENT + 1, 1500)  # 1.5 s delay
-
     def handle_transition(self, event):
         """Move to next level when timer event fires."""
         if event.type == pygame.USEREVENT + 1 and self.transitioning:
-            pygame.time.set_timer(pygame.USEREVENT + 1, 0)
+            pygame.time.set_timer(pygame.USEREVENT + 1, 0) # Clear the timer
             self.current_level += 1
             self.transitioning = False
-            self.load_level(self.current_level)
+
+            if self.current_level > 3: # Boss was level 3
+                self.win_triggered = True # Signal the win
+            else:
+                self.load_level(self.current_level)
 Background_1 = pygame.image.load('graphic/Background/background.png')
 scale_factor = 0.8
 x = int(Background_1.get_width() * scale_factor)
@@ -882,9 +884,8 @@ Background_1 = pygame.transform.scale(Background_1, (x, y))
 
 player = pygame.sprite.GroupSingle()
 player.add(Player())
-Enemy_Group = pygame.sprite.Group()
 projectile_group = pygame.sprite.Group() 
-game_stage = 'knight' 
+level_manager = Level(screen, player, projectile_group)
 
 # Menus
 pause_menu = PauseMenu(screen)
@@ -901,14 +902,16 @@ win_text = font.render("YOU WIN", True, (0, 255, 0))
 
 # restart game logic
 def reset_game():
-    global game_stage
     player.sprite.reset() 
-    Enemy_Group.empty()
     projectile_group.empty() 
-    Enemy_Group.add(Knight()) 
-    game_stage = 'knight'
-    pause_menu.is_paused = False
 
+    # Reset the level manager
+    level_manager.current_level = 1
+    level_manager.load_level(1) # This will load level 1 and reset player
+    level_manager.transitioning = False
+    level_manager.win_triggered = False
+
+    pause_menu.is_paused = False
 
 while True:
     for event in pygame.event.get():
@@ -928,6 +931,9 @@ while True:
                 exit()
 
         elif Game_Active:
+            if not pause_menu.is_paused:
+                # Handle level transition event
+                level_manager.handle_transition(event)
             # Handle input during the game for pause
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 pause_menu.is_paused = not pause_menu.is_paused 
@@ -955,75 +961,68 @@ while True:
     elif Game_Active:
         if pause_menu.is_paused:
             # Draw the game in the background, then the menu on top
-            screen.blit(Background_1, (0, 0))
-            Enemy_Group.draw(screen)
-            projectile_group.draw(screen)
+            level_manager.draw()
             player.draw(screen)
-            for enemy in Enemy_Group:
-                enemy.draw_health_bar(screen)
+            player.sprite.draw_health_bar(screen)
             player.sprite.draw_health_bar(screen)
             # Draw pause menu last
             pause_menu.draw()
         else:
-            # main game enemy logic
-            screen.blit(Background_1, (0, 0))
+            # Update logic for level (enemies, projectiles, transitions)
+            level_manager.update_logic()
+            
+            # Update player logic only if not transitioning
+            if not level_manager.transitioning:
+                player.update()
 
-            if not Enemy_Group and game_stage == 'knight':
-                game_stage = 'wizard'
-                Enemy_Group.add(wizard(projectile_group, player.sprite))
-            elif not Enemy_Group and game_stage == 'wizard':
-                game_stage = 'boss'
-                Enemy_Group.add(Boss())
+            # Draw everything
+            level_manager.draw()
 
-            Enemy_Group.update(player.sprite)
-            projectile_group.update()
-            player.update(screen)
-                
-            Enemy_Group.draw(screen)
-            projectile_group.draw(screen)
-            player.draw(screen)
-                
-            player_sprite = player.sprite
+            # Draw player and health bar only if not transitioning
+            if not level_manager.transitioning:
+                player.draw(screen)
+                player.sprite.draw_health_bar(screen)
 
-            # collision and damage logic
-            for enemy in Enemy_Group:
-                if isinstance(enemy, Knight):
-                    if enemy.just_attacked and player_sprite.hitbox.colliderect(enemy.hitbox):
-                        player_sprite.health -= 15 
-                    if player_sprite.is_attacking and abs(enemy.rect.centerx - player_sprite.rect.centerx) < 200:
-                        enemy.take_damage(0.8) 
-                elif isinstance(enemy, wizard):
-                    if player_sprite.is_attacking and player_sprite.hitbox.colliderect(enemy.hitbox):
-                        enemy.take_damage(0.8) 
-                elif isinstance(enemy, Boss):
+                # collision and damage logic
+                player_sprite = player.sprite
+
+                # using level_manager.enemy_group
+                for enemy in level_manager.enemy_group:
+                    if isinstance(enemy, Knight):
+                        if enemy.just_attacked and player_sprite.hitbox.colliderect(enemy.hitbox):
+                            player_sprite.health -= 15 
+                        if player_sprite.is_attacking and abs(enemy.rect.centerx - player_sprite.rect.centerx) < 200:
+                            enemy.take_damage(0.8) 
+                    elif isinstance(enemy, wizard):
+                        if player_sprite.is_attacking and player_sprite.hitbox.colliderect(enemy.hitbox):
+                            enemy.take_damage(0.8) 
+                    elif isinstance(enemy, Boss):
                         if enemy.just_attacked and player_sprite.hitbox.colliderect(enemy.hitbox):
                             player_sprite.health -= 25 
-                        if player_sprite.is_attacking and player_sprite.hitbox.colliderect(enemy.hitbox):
-                            enemy.take_damage(0.8)
-                enemy.draw_health_bar(screen)
+                            if player_sprite.is_attacking and player_sprite.hitbox.colliderect(enemy.hitbox):
+                                enemy.take_damage(0.8)
 
-            for proj in projectile_group:
-                if player_sprite.is_attacking and not proj.deflected:
-                    if player_sprite.rect.colliderect(proj.hitbox): 
-                        proj.deflect()
-                elif not proj.deflected:
-                    if player_sprite.hitbox.colliderect(proj.hitbox):
-                        player_sprite.health -= 10 
-                        proj.kill()
+                # using level_manager.projectile_group
+                for proj in level_manager.projectile_group:
+                    if player_sprite.is_attacking and not proj.deflected:
+                        if player_sprite.rect.colliderect(proj.hitbox): 
+                            proj.deflect()
+                        elif not proj.deflected:
+                            if player_sprite.hitbox.colliderect(proj.hitbox):
+                                player_sprite.health -= 10 
+                                proj.kill()
 
-            for enemy in Enemy_Group:
-                if isinstance(enemy, wizard): 
-                    for proj in projectile_group:
-                        if enemy.hitbox.colliderect(proj.hitbox) and proj.deflected:
-                            enemy.take_damage(25) 
-                            proj.kill() 
-
-            player.sprite.draw_health_bar(screen)
+                for enemy in level_manager.enemy_group:
+                    if isinstance(enemy, wizard): 
+                        for proj in level_manager.projectile_group:
+                            if enemy.hitbox.colliderect(proj.hitbox) and proj.deflected:
+                                enemy.take_damage(25) 
+                                proj.kill() 
 
             # checking win or lose
             if player.sprite.health <= 0:
                 Game_Active = False
-            elif not Enemy_Group and game_stage == 'boss': 
+            elif level_manager.win_triggered: 
                 Game_Active = False
             
     else: 
@@ -1049,10 +1048,5 @@ while True:
         menu_rect = menu_text.get_rect(center=(info.current_w // 2, info.current_h // 2 + 110))
         screen.blit(menu_text, menu_rect)
         
-        # Reset player health if they lost 
-        if player.sprite.health <= 0:
-            player.sprite.reset()
-    
     pygame.display.update()
     clock.tick(60)
-
