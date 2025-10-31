@@ -227,7 +227,8 @@ class Player(pygame.sprite.Sprite):
         self.apply_gravity()
         self.player_animation_state()
         self.Healing_Flask()
-        self.hitbox.midbottom = self.rect.midbottom 
+        self.hitbox.midbottom = self.rect.midbottom
+    
 
     def reset(self):
         self.health = self.max_health
@@ -235,6 +236,7 @@ class Player(pygame.sprite.Sprite):
         self.gravity = 0         
         self.space_pressed = False
         self.is_attacking = False
+        self.total_Flask = 3
      
 class Enemy(pygame.sprite.Sprite):
     def __init__(self):
@@ -1078,3 +1080,4 @@ while True:
         
     pygame.display.update()
     clock.tick(60)
+
