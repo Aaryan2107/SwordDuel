@@ -279,10 +279,66 @@ class PauseMenu:
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = event.pos
             if self.resume_rect.collidepoint(mouse_pos):
-                self.is_paused = False  # Resume game
+                self.is_paused = False 
+                return None
             elif self.exit_rect.collidepoint(mouse_pos):
-                pygame.quit()
-                exit()
+                self.is_paused = False # Ensure we are not paused when returning
+                return 'main_menu'   # Signal to return to the main menu
+        return None
+
+class MainMenu:
+    def __init__(self, screen):
+        self.screen = screen
+        self.screen_width = screen.get_width()
+        self.screen_height = screen.get_height()
+        self.font_title = pygame.font.Font(None, 120)
+        self.font_button = pygame.font.Font(None, 70)
+        
+        # Title
+        self.title_text = self.font_title.render("SWORDDUEL", True, (200, 200, 200))
+        self.title_rect = self.title_text.get_rect(center=(self.screen_width // 2, self.screen_height // 2 - 200))
+
+        # Button rectangles
+        button_width = 300
+        button_height = 80
+        button_y_start = self.screen_height // 2
+        
+        self.start_rect = pygame.Rect(self.screen_width // 2 - button_width // 2, button_y_start - 50, button_width, button_height)
+        self.exit_rect = pygame.Rect(self.screen_width // 2 - button_width // 2, button_y_start + 70, button_width, button_height)
+
+        # Button text
+        self.start_text = self.font_button.render("Start Game", True, (255, 255, 255))
+        self.exit_text = self.font_button.render("Exit Game", True, (255, 255, 255))
+
+    def draw(self, background_image):
+        # Draw background and overlay
+        self.screen.blit(background_image, (0, 0))
+        overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))
+        self.screen.blit(overlay, (0, 0))
+
+        # Draw title
+        self.screen.blit(self.title_text, self.title_rect)
+
+        # Draw Start button
+        pygame.draw.rect(self.screen, (90, 180, 90), self.start_rect, border_radius=10)
+        pygame.draw.rect(self.screen, (255, 255, 255), self.start_rect, 3, border_radius=10)
+        self.screen.blit(self.start_text, self.start_text.get_rect(center=self.start_rect.center))
+
+        # Draw Exit button
+        pygame.draw.rect(self.screen, (180, 60, 60), self.exit_rect, border_radius=10)
+        pygame.draw.rect(self.screen, (255, 255, 255), self.exit_rect, 3, border_radius=10)
+        self.screen.blit(self.exit_text, self.exit_text.get_rect(center=self.exit_rect.center))
+
+    def handle_input(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = event.pos
+            if self.start_rect.collidepoint(mouse_pos):
+                return 'start'  # Signal to start the game
+            elif self.exit_rect.collidepoint(mouse_pos):
+                return 'quit'   # Signal to quit the application
+        return None 
+    
 class Knight(Enemy):
         def __init__(self): 
             super().__init__()
@@ -824,46 +880,94 @@ Background_1 = pygame.transform.scale(Background_1, (x, y))
 player = pygame.sprite.GroupSingle()
 player.add(Player())
 Enemy_Group = pygame.sprite.Group()
-Enemy_Group.add(Knight())
 projectile_group = pygame.sprite.Group() 
 game_stage = 'knight' 
+
+# Menus
 pause_menu = PauseMenu(screen)
-Game_Active = True
+main_menu = MainMenu(screen)
+
+# Game states
+Game_Active = False
+main_menu_active = True
+
+# Fonts and text
 font = pygame.font.Font(None , 150) 
 small_font = pygame.font.Font(None,60)
 win_text = font.render("YOU WIN", True, (0, 255, 0)) 
+
+# restart game logic
+def reset_game():
+    global game_stage
+    player.sprite.reset() 
+    Enemy_Group.empty()
+    projectile_group.empty() 
+    Enemy_Group.add(Knight()) 
+    game_stage = 'knight'
+    pause_menu.is_paused = False
+
 
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
-
-        if not Game_Active and event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_r:
-                player.sprite.reset() 
-                Enemy_Group.empty()
-                projectile_group.empty() 
-                Enemy_Group.add(Knight()) 
-                game_stage = 'knight'
+        
+        if main_menu_active:
+            # Handle input for the main menu
+            action = main_menu.handle_input(event)
+            if action == 'start':
+                main_menu_active = False
                 Game_Active = True
-        if Game_Active:
+                reset_game()
+            elif action == 'quit':
+                pygame.quit()
+                exit()
+
+        elif Game_Active:
+            # Handle input during the game for pause
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 pause_menu.is_paused = not pause_menu.is_paused 
 
             if pause_menu.is_paused:
-                pause_menu.handle_input(event)        
+                # Handle input for the pause menu
+                action = pause_menu.handle_input(event)
+                if action == 'main_menu':
+                    Game_Active = False
+                    main_menu_active = True
 
-    if Game_Active:
+        elif not Game_Active and not main_menu_active:
+            # Handle input on the "Game Over" or "You Win" screen
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    Game_Active = True
+                    reset_game()
+                elif event.key == pygame.K_m:
+                    main_menu_active = True
+
+    if main_menu_active:
+        # Draw the main menu
+        main_menu.draw(Background_1)
+
+    elif Game_Active:
         if pause_menu.is_paused:
+            # Draw the game in the background, then the menu on top
+            screen.blit(Background_1, (0, 0))
+            Enemy_Group.draw(screen)
+            projectile_group.draw(screen)
+            player.draw(screen)
+            for enemy in Enemy_Group:
+                enemy.draw_health_bar(screen)
+            player.sprite.draw_health_bar(screen)
+            # Draw pause menu last
             pause_menu.draw()
         else:
+            # main game enemy logic
             screen.blit(Background_1, (0, 0))
 
             if not Enemy_Group and game_stage == 'knight':
                 game_stage = 'wizard'
                 Enemy_Group.add(wizard(projectile_group, player.sprite))
-
             elif not Enemy_Group and game_stage == 'wizard':
                 game_stage = 'boss'
                 Enemy_Group.add(Boss())
@@ -878,16 +982,16 @@ while True:
                 
             player_sprite = player.sprite
 
+            # collision and damage logic
             for enemy in Enemy_Group:
                 if isinstance(enemy, Knight):
                     if enemy.just_attacked and player_sprite.hitbox.colliderect(enemy.hitbox):
                         player_sprite.health -= 15 
                     if player_sprite.is_attacking and abs(enemy.rect.centerx - player_sprite.rect.centerx) < 200:
-                        enemy.take_damage(0.8)         
+                        enemy.take_damage(0.8) 
                 elif isinstance(enemy, wizard):
                     if player_sprite.is_attacking and player_sprite.hitbox.colliderect(enemy.hitbox):
                         enemy.take_damage(0.8) 
-
                 elif isinstance(enemy, Boss):
                         if enemy.just_attacked and player_sprite.hitbox.colliderect(enemy.hitbox):
                             player_sprite.health -= 25 
@@ -913,29 +1017,38 @@ while True:
 
             player.sprite.draw_health_bar(screen)
 
+            # checking win or lose
             if player.sprite.health <= 0:
                 Game_Active = False
             elif not Enemy_Group and game_stage == 'boss': 
-                    Game_Active = False
+                Game_Active = False
             
+    else: 
+        # Draw the "Game Over" or "You Win" screen
+        screen.fill((0, 0, 0)) 
         
-    else:
-        screen.fill((0, 0, 0))  
         if player.sprite.health <= 0:
+            # Player lost
             game_over_text = font.render("GAME OVER", True, (255, 0, 0))
             game_over_rect = game_over_text.get_rect(center=(info.current_w // 2, info.current_h // 2 - 100))
-            knight_win=pygame.mixer.Sound('audio/knight_win.mp3')
             screen.blit(game_over_text, game_over_rect)
         else:
+            # Player won
             win_rect = win_text.get_rect(center=(info.current_w // 2, info.current_h // 2 - 100))
             screen.blit(win_text, win_rect)
+        
+        # Draw restart and menu options
         restart_text = small_font.render("Press 'R' to Restart", True, (255, 255, 255))
         restart_rect = restart_text.get_rect(center=(info.current_w // 2, info.current_h // 2 + 50))
-        player_win=pygame.mixer.Sound('audio/player_win.mp3')
         screen.blit(restart_text, restart_rect)
         
+        menu_text = small_font.render("Press 'M' for Menu", True, (255, 255, 255))
+        menu_rect = menu_text.get_rect(center=(info.current_w // 2, info.current_h // 2 + 110))
+        screen.blit(menu_text, menu_rect)
+        
+        # Reset player health if they lost 
         if player.sprite.health <= 0:
             player.sprite.reset()
-        
+    
     pygame.display.update()
     clock.tick(60)
