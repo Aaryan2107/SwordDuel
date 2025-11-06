@@ -101,6 +101,15 @@ class Level:
             pygame.time.set_timer(pygame.USEREVENT + 1, 0) # Clear the timer
             self.current_level += 1
             self.transitioning = False
+            if self.current_level==1:
+                Knight_entery = pygame.mixer.Sound('audio/knight_entery.mp3')
+                Knight_entery.play(0)
+            elif self.current_level==2:
+                wizard_entery = pygame.mixer.Sound('audio/witch_entery.mp3')
+                wizard_entery.play(0)
+            elif self.current_level==3:
+                Boss_entery = pygame.mixer.Sound('audio/boss_entery.mp3')
+                Boss_entery.play(0)
 
             if self.current_level > 3: # Boss was level 3
                 self.win_triggered = True # Signal the win
