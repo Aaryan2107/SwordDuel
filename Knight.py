@@ -101,7 +101,8 @@ class Knight(Enemy):
 
         def take_damage(self, amount):
             self.health -= amount
-            
+            Knight_damage = pygame.mixer.Sound('audio/knight_damage.mp3')
+            Knight_damage.play(0)
             if self.health <= 0:
                 self.kill()
 
