@@ -65,6 +65,8 @@ class Boss(Enemy):
 
     def take_damage(self, amount):
         self.health -= amount
+        boss_damage = pygame.mixer.Sound('audio/boss_damage.mp3')
+        boss_damage.play(0)
         if self.health <= 0:
             self.kill()
 
