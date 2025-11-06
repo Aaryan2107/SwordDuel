@@ -62,7 +62,8 @@ def reset_game():
     level_manager.win_triggered = False
     
     pause_menu.is_paused = False
-
+Background_music = pygame.mixer.Sound('audio/background.mp3')
+Background_music.play(-1)
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -221,3 +222,4 @@ while True:
         
     pygame.display.update()
     clock.tick(60)
+
