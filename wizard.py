@@ -100,6 +100,8 @@ class wizard(Enemy): # Inherits from Enemy class
 
     def take_damage(self, amount):
         self.health -= amount
+        wizard_damage = pygame.mixer.Sound('audio/witch_damage.mp3')
+        wizard_damage.play(0)
         if self.health <= 0:
             self.kill()
 
